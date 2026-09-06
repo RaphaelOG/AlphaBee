@@ -1,30 +1,21 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
-import * as Speech from 'expo-speech';
 import { GameHeader } from '../components/GameHeader';
 import { LetterSlots } from '../components/LetterSlots';
 import { HexKeyboard } from '../components/HexKeyboard';
 import { AlphaBee } from '../components/AlphaBee';
 import { colors, typography } from '../theme';
 import { getRandomWord } from '../data/words';
+import { speakWord, stopSpeaking } from '../utils/speech';
 import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 type SpellPhase = 'look' | 'listen';
-
-function speakWord(word: string) {
-  Speech.stop();
-  Speech.speak(word, {
-    language: 'en-US',
-    rate: 0.85,
-    pitch: 1.05,
-  });
-}
 
 export function GameScreen({ navigation, route }: Props) {
   const { mode, grade = '1', customWords = [] } = route.params;
@@ -54,18 +45,34 @@ export function GameScreen({ navigation, route }: Props) {
   const [feedback, setFeedback] = useState<'idle' | 'correct' | 'incorrect'>('idle');
   const [flipping, setFlipping] = useState(false);
   const [locked, setLocked] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const isSpeakingRef = useRef(false);
 
   useEffect(() => {
     return () => {
-      Speech.stop();
+      stopSpeaking();
     };
   }, []);
 
+  const playWord = useCallback(async () => {
+    if (!target || isSpeakingRef.current) return;
+    isSpeakingRef.current = true;
+    setIsSpeaking(true);
+    try {
+      await speakWord(target);
+    } finally {
+      isSpeakingRef.current = false;
+      setIsSpeaking(false);
+    }
+  }, [target]);
+
   useEffect(() => {
     if (phase !== 'listen') return;
-    const timer = setTimeout(() => speakWord(target), 350);
+    const timer = setTimeout(() => {
+      void playWord();
+    }, 1000);
     return () => clearTimeout(timer);
-  }, [phase, target]);
+  }, [phase, target, playWord]);
 
   const onKey = (letter: string) => {
     if (locked || input.length >= target.length) return;
@@ -120,7 +127,7 @@ export function GameScreen({ navigation, route }: Props) {
         setInput([]);
         setFeedback('idle');
         setLocked(false);
-        if (phase === 'listen') speakWord(target);
+        if (phase === 'listen') void playWord();
       }, 700);
     }
   };
@@ -159,12 +166,18 @@ export function GameScreen({ navigation, route }: Props) {
             {isListen ? (
               <>
                 <Pressable
-                  onPress={() => speakWord(target)}
-                  style={styles.hearBtn}
+                  onPress={() => {
+                    void playWord();
+                  }}
+                  hitSlop={16}
+                  disabled={locked || isSpeaking}
+                  style={[styles.hearBtn, isSpeaking && styles.hearBtnDisabled]}
+                  accessibilityRole="button"
                   accessibilityLabel="Hear the word again"
+                  accessibilityState={{ disabled: locked || isSpeaking, busy: isSpeaking }}
                 >
                   <Text style={styles.hearIcon}>♪</Text>
-                  <Text style={styles.hearLabel}>Tap to hear</Text>
+                  <Text style={styles.hearLabel}>{isSpeaking ? 'Playing…' : 'Tap to hear'}</Text>
                 </Pressable>
                 <Text style={styles.hiddenHint}>{target.length} letters</Text>
               </>
@@ -295,6 +308,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 2,
     paddingVertical: 4,
+  },
+  hearBtnDisabled: {
+    opacity: 0.45,
   },
   hearIcon: {
     fontFamily: 'Nunito_900Black',

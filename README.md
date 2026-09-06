@@ -38,6 +38,7 @@ Children practice spelling through a two-round flow: first **look** at the word,
 ```bash
 npm install
 npx expo start
+or npm start
 ```
 
 Then press:
@@ -93,6 +94,4 @@ npm run web        # start web
 - **Theme:** modern cartoon / friendly honeycomb motifs throughout layout and controls
 - Components are modular so cards, modals, and hex controls can be reused across screens
 
-## License
 
-See [LICENSE](./LICENSE) in this repository.

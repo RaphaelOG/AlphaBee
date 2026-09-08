@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +14,8 @@ import { gradeLabel } from '../data/words';
 import type { GameMode, RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ModeSelect'>;
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 export function ModeSelectScreen({ navigation }: Props) {
   const [mode, setMode] = useState<GameMode>('quest');
@@ -30,61 +32,88 @@ export function ModeSelectScreen({ navigation }: Props) {
   };
 
   return (
-    <LinearGradient colors={[colors.skyTop, colors.cream, colors.skyBottom]} style={styles.fill}>
+    <View style={styles.fill}>
       <StatusBar style="dark" />
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.bgHexRow} pointerEvents="none">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <Hexagon
-              key={i}
-              size={28}
-              fill={i % 2 === 0 ? colors.honeyLight : colors.goldBright}
-              fillEnd={colors.gold}
-              stroke={colors.honey}
-              strokeWidth={1.5}
-              style={{ opacity: 0.35, marginLeft: i === 0 ? 0 : -6 }}
-            />
-          ))}
-        </View>
-
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-          bounces
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces
+        alwaysBounceVertical
+        keyboardShouldPersistTaps="handled"
+      >
+        <LinearGradient
+          colors={[colors.skyTop, colors.cream, colors.skyBottom]}
+          style={styles.gradient}
         >
-          <ModeSwitcher
-            mode={mode}
-            grade={grade}
-            onModeChange={setMode}
-            onGradeChange={setGrade}
-            onOpenPractice={() => setPracticeOpen(true)}
-          />
-
-          {mode === 'quest' ? (
-            <View style={styles.playBlock}>
-              <Text style={styles.readyText}>Ready for {gradeLabel(grade)}?</Text>
-              <Text style={styles.readySub}>Two rounds per word — look first, then listen</Text>
-              <HoneycombButton label="Play" size={132} onPress={startQuest} />
+          <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
+            <View style={styles.bgHexRow} pointerEvents="none">
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <Hexagon
+                  key={i}
+                  size={28}
+                  fill={i % 2 === 0 ? colors.honeyLight : colors.goldBright}
+                  fillEnd={colors.gold}
+                  stroke={colors.honey}
+                  strokeWidth={1.5}
+                  style={{ opacity: 0.35, marginLeft: i === 0 ? 0 : -6 }}
+                />
+              ))}
             </View>
-          ) : null}
-        </ScrollView>
 
-        <PracticeHiveModal
-          visible={practiceOpen}
-          onClose={() => {
-            setPracticeOpen(false);
-            setMode('quest');
-          }}
-          onSave={startPractice}
-        />
-      </SafeAreaView>
-    </LinearGradient>
+            <View style={styles.content}>
+              <ModeSwitcher
+                mode={mode}
+                grade={grade}
+                onModeChange={setMode}
+                onGradeChange={setGrade}
+                onOpenPractice={() => setPracticeOpen(true)}
+              />
+
+              {mode === 'quest' ? (
+                <View style={styles.playBlock}>
+                  <Text style={styles.readyText}>Ready for {gradeLabel(grade)}?</Text>
+                  <Text style={styles.readySub}>Two rounds per word — look first, then listen</Text>
+                  <HoneycombButton label="Play" size={132} onPress={startQuest} />
+                </View>
+              ) : null}
+            </View>
+          </SafeAreaView>
+        </LinearGradient>
+      </ScrollView>
+
+      <PracticeHiveModal
+        visible={practiceOpen}
+        onClose={() => {
+          setPracticeOpen(false);
+          setMode('quest');
+        }}
+        onSave={startPractice}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  safe: { flex: 1 },
+  fill: {
+    flex: 1,
+    backgroundColor: colors.cream,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  gradient: {
+    flexGrow: 1,
+    minHeight: '100%',
+  },
+  safe: {
+    flexGrow: 1,
+    marginTop: 50,
+    
+  },
   bgHexRow: {
     position: 'absolute',
     top: 8,

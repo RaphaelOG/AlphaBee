@@ -82,7 +82,8 @@ export function Hexagon({
   const height = size * 0.866;
   const verts = flatTopVertices(width, height);
   const points = verts.map((v) => `${v.x},${v.y}`).join(' ');
-  const radius = cornerRadius ?? size * 0.12;
+  const radius = cornerRadius ?? size * 0.15;
+  console.log('radius', radius);
   const pathD = useMemo(
     () => (rounded ? roundedHexPath(width, height, radius) : ''),
     [rounded, width, height, radius],

@@ -10,7 +10,7 @@ import { LetterSlots } from '../components/LetterSlots';
 import { HexKeyboard } from '../components/HexKeyboard';
 import { AlphaBee } from '../components/AlphaBee';
 import { colors, typography } from '../theme';
-import { getRandomWord } from '../data/words';
+import { createQuestSession, type CurriculumUnit } from '../data/curriculum';
 import { speakWord, stopSpeaking } from '../utils/speech';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -18,26 +18,32 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 type SpellPhase = 'look' | 'listen';
 
 export function GameScreen({ navigation, route }: Props) {
-  const { mode, grade = '1', customWords = [] } = route.params;
+  const { mode, grade = '1', unitId, customWords = [] } = route.params;
 
   const wordPool = useMemo(() => {
     if (mode === 'practice' && customWords.length > 0) return customWords;
     return null;
   }, [mode, customWords]);
 
-  const pickWord = useCallback(
+  const questSession = useMemo(() => {
+    if (wordPool) return null;
+    return createQuestSession(grade, unitId);
+  }, [wordPool, grade, unitId]);
+
+  const pickPracticeWord = useCallback(
     (exclude?: string) => {
-      if (wordPool) {
-        const filtered = exclude ? wordPool.filter((w) => w !== exclude) : wordPool;
-        const list = filtered.length > 0 ? filtered : wordPool;
-        return list[Math.floor(Math.random() * list.length)];
-      }
-      return getRandomWord(grade, exclude);
+      if (!wordPool) return 'bee';
+      const filtered = exclude ? wordPool.filter((w) => w !== exclude) : wordPool;
+      const list = filtered.length > 0 ? filtered : wordPool;
+      return list[Math.floor(Math.random() * list.length)];
     },
-    [wordPool, grade],
+    [wordPool],
   );
 
-  const [target, setTarget] = useState(() => pickWord());
+  const initialQuest = useMemo(() => (questSession ? questSession.next() : null), [questSession]);
+
+  const [target, setTarget] = useState(() => initialQuest?.word ?? pickPracticeWord());
+  const [activeUnit, setActiveUnit] = useState<CurriculumUnit | null>(() => initialQuest?.unit ?? null);
   const [phase, setPhase] = useState<SpellPhase>('look');
   const [input, setInput] = useState<string[]>([]);
   const [honey, setHoney] = useState(0);
@@ -47,6 +53,18 @@ export function GameScreen({ navigation, route }: Props) {
   const [locked, setLocked] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const isSpeakingRef = useRef(false);
+
+  const advanceToNextWord = useCallback(() => {
+    if (questSession) {
+      const picked = questSession.next(target);
+      setTarget(picked.word);
+      setActiveUnit(picked.unit);
+    } else {
+      setTarget(pickPracticeWord(target));
+      setActiveUnit(null);
+    }
+    setPhase('look');
+  }, [questSession, pickPracticeWord, target]);
 
   useEffect(() => {
     return () => {
@@ -111,9 +129,7 @@ export function GameScreen({ navigation, route }: Props) {
           // Same word again — hide it and play audio
           setPhase('listen');
         } else {
-          const next = pickWord(target);
-          setTarget(next);
-          setPhase('look');
+          advanceToNextWord();
         }
       }, 900);
     } else {
@@ -146,11 +162,21 @@ export function GameScreen({ navigation, route }: Props) {
           honey={honey}
           grade={mode === 'quest' ? grade : undefined}
           modeLabel={mode === 'quest' ? 'Grade Level Quest' : 'Practice Hive'}
+          patternLabel={activeUnit?.focusLabel}
         />
 
         <View style={styles.card}>
           <View style={styles.cardHexEdge} />
           <AlphaBee size={56} happy={feedback === 'correct'} flipping={flipping} />
+
+          {activeUnit ? (
+            <View style={styles.unitBanner}>
+              <Text style={styles.unitBannerTitle}>{activeUnit.title}</Text>
+              <Text style={styles.unitBannerDesc} numberOfLines={2}>
+                {activeUnit.description}
+              </Text>
+            </View>
+          ) : null}
 
           <View style={styles.phasePill}>
             <Text style={styles.phasePillText}>
@@ -264,6 +290,30 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderWidth: 1.5,
     borderColor: colors.honeyLight,
+  },
+  unitBanner: {
+    width: '100%',
+    backgroundColor: colors.creamSoft,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: colors.honey,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 2,
+  },
+  unitBannerTitle: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 14,
+    color: colors.honeyDark,
+    textAlign: 'center',
+  },
+  unitBannerDesc: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 11,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: 2,
+    lineHeight: 15,
   },
   phasePillText: {
     fontFamily: 'Nunito_700Bold',

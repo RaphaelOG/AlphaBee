@@ -1,38 +1,48 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Hexagon } from './Hexagon';
 import { AlphaBee } from './AlphaBee';
 import { HiveStructure } from './HiveDecor';
 import { colors, typography } from '../theme';
 import type { GradeLevel } from '../data/words';
-import { GRADE_LEVELS, WORDS_BY_GRADE, gradeLabel } from '../data/words';
+import {
+  GRADE_LEVELS,
+  GRADE_CURRICULUM_BLURBS,
+  getDefaultUnitId,
+  getUnitById,
+  getUnitsForGrade,
+  gradeLabel,
+} from '../data/curriculum';
 import type { GameMode } from '../navigation/types';
 
 type ModeSwitcherProps = {
   mode: GameMode;
   grade: GradeLevel;
+  unitId: string;
   onModeChange: (mode: GameMode) => void;
   onGradeChange: (grade: GradeLevel) => void;
+  onUnitChange: (unitId: string) => void;
   onOpenPractice: () => void;
-};
-
-const GRADE_BLURBS: Record<GradeLevel, string> = {
-  K: 'Short 3-letter words',
-  '1': 'Friendly starter words',
-  '2': 'Growing vocabulary',
-  '3': 'Bigger spelling challenges',
-  '4': 'Longer adventure words',
-  '5': 'Expert hive words',
 };
 
 export function ModeSwitcher({
   mode,
   grade,
+  unitId,
   onModeChange,
   onGradeChange,
+  onUnitChange,
   onOpenPractice,
 }: ModeSwitcherProps) {
-  const sampleWords = WORDS_BY_GRADE[grade].slice(0, 4);
+  const units = useMemo(() => getUnitsForGrade(grade), [grade]);
+  const activeUnit = getUnitById(unitId) ?? units[0];
+  const sampleWords = (activeUnit?.words ?? []).slice(0, 4);
+
+  useEffect(() => {
+    if (!units.some((u) => u.id === unitId)) {
+      onUnitChange(getDefaultUnitId(grade));
+    }
+  }, [grade, unitId, units, onUnitChange]);
 
   return (
     <View style={styles.wrap}>
@@ -91,11 +101,11 @@ export function ModeSwitcher({
             <Text style={styles.modeIcon}>Q</Text>
           </Hexagon>
           <Text style={styles.modeTitle}>Grade Quest</Text>
-          <Text style={styles.modeDesc}>Built-in words matched to each grade level</Text>
+          <Text style={styles.modeDesc}>Phonics path with sight words & patterns</Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bullet}>• K through Grade 5 paths</Text>
-            <Text style={styles.bullet}>• Look, then listen rounds</Text>
-            <Text style={styles.bullet}>• Earn honey as you go</Text>
+            <Text style={styles.bullet}>• Sequenced K–5 curriculum</Text>
+            <Text style={styles.bullet}>• CVC, blends, silent e & more</Text>
+            <Text style={styles.bullet}>• Units unlock in order as you play</Text>
           </View>
           {mode === 'quest' ? <Text style={styles.selectedTag}>Selected</Text> : null}
         </Pressable>
@@ -127,7 +137,7 @@ export function ModeSwitcher({
             <Text style={styles.sectionLabel}>Pick a grade badge</Text>
             <Text style={styles.gradeActiveLabel}>{gradeLabel(grade)}</Text>
           </View>
-          <Text style={styles.gradeBlurb}>{GRADE_BLURBS[grade]}</Text>
+          <Text style={styles.gradeBlurb}>{GRADE_CURRICULUM_BLURBS[grade]}</Text>
 
           <View style={styles.badgeRow}>
             {GRADE_LEVELS.map((g) => {
@@ -147,16 +157,49 @@ export function ModeSwitcher({
             })}
           </View>
 
-          <View style={styles.sampleBox}>
-            <Text style={styles.sampleLabel}>Sample words in this hive</Text>
-            <View style={styles.sampleChips}>
-              {sampleWords.map((word) => (
-                <View key={word} style={styles.sampleChip}>
-                  <Text style={styles.sampleChipText}>{word}</Text>
-                </View>
-              ))}
+          <Text style={[styles.sectionLabel, styles.pathLabel]}>Phonics path</Text>
+          <Text style={styles.pathHint}>Start on a pattern — play advances through the sequence</Text>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.unitRow}
+          >
+            {units.map((unit, index) => {
+              const active = unit.id === activeUnit?.id;
+              return (
+                <Pressable
+                  key={unit.id}
+                  onPress={() => onUnitChange(unit.id)}
+                  style={[styles.unitChip, active && styles.unitChipActive]}
+                  accessibilityLabel={unit.title}
+                >
+                  <Text style={[styles.unitOrder, active && styles.unitOrderActive]}>{index + 1}</Text>
+                  <Text style={[styles.unitChipTitle, active && styles.unitChipTitleActive]} numberOfLines={2}>
+                    {unit.title}
+                  </Text>
+                  <Text style={[styles.unitChipFocus, active && styles.unitChipFocusActive]}>
+                    {unit.focusLabel}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          {activeUnit ? (
+            <View style={styles.unitDetail}>
+              <Text style={styles.unitDetailTitle}>{activeUnit.title}</Text>
+              <Text style={styles.unitDetailDesc}>{activeUnit.description}</Text>
+              <Text style={styles.sampleLabel}>Sample words in this unit</Text>
+              <View style={styles.sampleChips}>
+                {sampleWords.map((word) => (
+                  <View key={word} style={styles.sampleChip}>
+                    <Text style={styles.sampleChipText}>{word}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
-          </View>
+          ) : null}
         </View>
       ) : null}
 
@@ -401,14 +444,79 @@ const styles = StyleSheet.create({
   badgeTextActive: {
     color: colors.white,
   },
-  sampleBox: {
+  pathLabel: {
+    marginTop: 6,
+  },
+  pathHint: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 12,
+    color: colors.textMuted,
+    alignSelf: 'flex-start',
+    marginTop: -4,
+  },
+  unitRow: {
+    gap: 10,
+    paddingVertical: 4,
+    paddingRight: 8,
+  },
+  unitChip: {
+    width: 132,
+    backgroundColor: colors.creamSoft,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: colors.honeyLight,
+    padding: 10,
+    gap: 4,
+  },
+  unitChipActive: {
+    backgroundColor: colors.goldBright,
+    borderColor: colors.honeyDark,
+  },
+  unitOrder: {
+    fontFamily: 'Nunito_900Black',
+    fontSize: 12,
+    color: colors.honey,
+  },
+  unitOrderActive: {
+    color: colors.honeyDark,
+  },
+  unitChipTitle: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 12,
+    color: colors.text,
+    minHeight: 32,
+  },
+  unitChipTitleActive: {
+    color: colors.text,
+  },
+  unitChipFocus: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 10,
+    color: colors.textMuted,
+  },
+  unitChipFocusActive: {
+    color: colors.brown,
+  },
+  unitDetail: {
     width: '100%',
     backgroundColor: colors.creamSoft,
     borderRadius: 16,
     padding: 12,
-    gap: 8,
+    gap: 6,
     borderWidth: 1.5,
     borderColor: colors.honeyLight,
+  },
+  unitDetailTitle: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 14,
+    color: colors.honeyDark,
+  },
+  unitDetailDesc: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 12,
+    color: colors.textMuted,
+    lineHeight: 17,
+    marginBottom: 4,
   },
   sampleLabel: {
     fontFamily: 'Nunito_700Bold',

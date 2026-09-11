@@ -10,7 +10,7 @@ import { HoneycombButton } from '../components/HoneycombButton';
 import { Hexagon } from '../components/Hexagon';
 import { colors } from '../theme';
 import type { GradeLevel } from '../data/words';
-import { gradeLabel } from '../data/words';
+import { getDefaultUnitId, getUnitById, gradeLabel } from '../data/curriculum';
 import type { GameMode, RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ModeSelect'>;
@@ -20,10 +20,18 @@ const SCREEN_HEIGHT = Dimensions.get('window').height;
 export function ModeSelectScreen({ navigation }: Props) {
   const [mode, setMode] = useState<GameMode>('quest');
   const [grade, setGrade] = useState<GradeLevel>('1');
+  const [unitId, setUnitId] = useState(() => getDefaultUnitId('1'));
   const [practiceOpen, setPracticeOpen] = useState(false);
 
+  const activeUnit = getUnitById(unitId);
+
+  const handleGradeChange = (next: GradeLevel) => {
+    setGrade(next);
+    setUnitId(getDefaultUnitId(next));
+  };
+
   const startQuest = () => {
-    navigation.navigate('Game', { mode: 'quest', grade });
+    navigation.navigate('Game', { mode: 'quest', grade, unitId });
   };
 
   const startPractice = (words: string[]) => {
@@ -65,15 +73,21 @@ export function ModeSelectScreen({ navigation }: Props) {
               <ModeSwitcher
                 mode={mode}
                 grade={grade}
+                unitId={unitId}
                 onModeChange={setMode}
-                onGradeChange={setGrade}
+                onGradeChange={handleGradeChange}
+                onUnitChange={setUnitId}
                 onOpenPractice={() => setPracticeOpen(true)}
               />
 
               {mode === 'quest' ? (
                 <View style={styles.playBlock}>
                   <Text style={styles.readyText}>Ready for {gradeLabel(grade)}?</Text>
-                  <Text style={styles.readySub}>Two rounds per word — look first, then listen</Text>
+                  <Text style={styles.readySub}>
+                    {activeUnit
+                      ? `Starting at “${activeUnit.title}” — look first, then listen`
+                      : 'Two rounds per word — look first, then listen'}
+                  </Text>
                   <HoneycombButton label="Play" size={132} onPress={startQuest} />
                 </View>
               ) : null}

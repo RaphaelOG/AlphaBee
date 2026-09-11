@@ -7,7 +7,7 @@ Children practice spelling through a two-round flow: first **look** at the word,
 ## Features
 
 - **Landing experience** — warm cream/honey palette, animated bee circle, honeycomb CTA
-- **Grade Level Quest** — built-in word banks for Grades K–5
+- **Grade Level Quest** — sequenced K–5 phonics path (CVC, digraphs, blends, silent e, vowel teams, and more) plus sight-word units
 - **Practice Hive** — parents/teachers enter custom weekly spelling lists
 - **Look → Listen rounds** — spell once with the word visible, then again using text-to-speech (`expo-speech`)
 - **Hexagonal UI** — honeycomb letter slots, keyboard keys, and buttons (SVG)

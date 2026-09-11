@@ -10,9 +10,11 @@ type GameHeaderProps = {
   honey: number;
   grade?: GradeLevel;
   modeLabel: string;
+  /** Active phonics / sight-word pattern label */
+  patternLabel?: string;
 };
 
-export function GameHeader({ honey, grade, modeLabel }: GameHeaderProps) {
+export function GameHeader({ honey, grade, modeLabel, patternLabel }: GameHeaderProps) {
   return (
     <View style={styles.row}>
       <View style={styles.side}>
@@ -30,7 +32,9 @@ export function GameHeader({ honey, grade, modeLabel }: GameHeaderProps) {
       <View style={styles.center}>
         <AlphaBee size={36} />
         <Text style={typography.brandSmall}>AlphaBee</Text>
-        <Text style={styles.mode}>{modeLabel}</Text>
+        <Text style={styles.mode} numberOfLines={1}>
+          {patternLabel ?? modeLabel}
+        </Text>
       </View>
 
       <View style={[styles.side, styles.sideRight]}>
@@ -59,8 +63,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   center: {
+    flex: 1,
     alignItems: 'center',
     gap: 2,
+    paddingHorizontal: 4,
   },
   honeyPot: {
     flexDirection: 'row',
@@ -99,5 +105,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 11,
     color: colors.textMuted,
+    textAlign: 'center',
   },
 });

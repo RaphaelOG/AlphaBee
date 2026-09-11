@@ -8,6 +8,8 @@ export type RootStackParamList = {
   Game: {
     mode: GameMode;
     grade?: GradeLevel;
+    /** Curriculum unit to start from in Grade Quest */
+    unitId?: string;
     customWords?: string[];
   };
   HiveRewards: {

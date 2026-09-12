@@ -9,6 +9,7 @@ import { GameHeader } from '../components/GameHeader';
 import { LetterSlots } from '../components/LetterSlots';
 import { HexKeyboard } from '../components/HexKeyboard';
 import { AlphaBee } from '../components/AlphaBee';
+import { SessionProgress } from '../components/SessionProgress';
 import { colors, typography } from '../theme';
 import { createQuestSession, type CurriculumUnit } from '../data/curriculum';
 import { speakWord, stopSpeaking } from '../utils/speech';
@@ -18,7 +19,14 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 type SpellPhase = 'look' | 'listen';
 
 export function GameScreen({ navigation, route }: Props) {
-  const { mode, grade = '1', unitId, customWords = [] } = route.params;
+  const {
+    mode,
+    grade = '1',
+    unitId,
+    customWords = [],
+    wordGoal,
+    questTitle,
+  } = route.params;
 
   const wordPool = useMemo(() => {
     if (mode === 'practice' && customWords.length > 0) return customWords;
@@ -48,11 +56,28 @@ export function GameScreen({ navigation, route }: Props) {
   const [input, setInput] = useState<string[]>([]);
   const [honey, setHoney] = useState(0);
   const [stars, setStars] = useState(0);
+  const [wordsCompleted, setWordsCompleted] = useState(0);
   const [feedback, setFeedback] = useState<'idle' | 'correct' | 'incorrect'>('idle');
   const [flipping, setFlipping] = useState(false);
   const [locked, setLocked] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const isSpeakingRef = useRef(false);
+  const finishingRef = useRef(false);
+
+  const finishSession = useCallback(
+    (nextHoney: number, nextStars: number, completed: number) => {
+      if (finishingRef.current) return;
+      finishingRef.current = true;
+      navigation.replace('SessionComplete', {
+        honey: nextHoney,
+        stars: nextStars,
+        wordsCompleted: completed,
+        wordGoal,
+        questTitle,
+      });
+    },
+    [navigation, wordGoal, questTitle],
+  );
 
   const advanceToNextWord = useCallback(() => {
     if (questSession) {
@@ -105,14 +130,17 @@ export function GameScreen({ navigation, route }: Props) {
   };
 
   const checkSpelling = async () => {
-    if (locked || input.length !== target.length) return;
+    if (locked || input.length !== target.length || finishingRef.current) return;
     setLocked(true);
     const guess = input.join('');
     if (guess === target) {
       setFeedback('correct');
       setFlipping(true);
-      setHoney((h) => h + (phase === 'listen' ? 2 : 1));
-      if (phase === 'listen') setStars((s) => s + 1);
+      const honeyGain = phase === 'listen' ? 2 : 1;
+      const nextHoney = honey + honeyGain;
+      const nextStars = phase === 'listen' ? stars + 1 : stars;
+      setHoney(nextHoney);
+      if (phase === 'listen') setStars(nextStars);
       try {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {
@@ -126,10 +154,15 @@ export function GameScreen({ navigation, route }: Props) {
         setLocked(false);
 
         if (phase === 'look') {
-          // Same word again — hide it and play audio
           setPhase('listen');
         } else {
-          advanceToNextWord();
+          const completed = wordsCompleted + 1;
+          setWordsCompleted(completed);
+          if (completed >= wordGoal) {
+            finishSession(nextHoney, nextStars, completed);
+          } else {
+            advanceToNextWord();
+          }
         }
       }, 900);
     } else {
@@ -164,6 +197,8 @@ export function GameScreen({ navigation, route }: Props) {
           modeLabel={mode === 'quest' ? 'Grade Level Quest' : 'Practice Hive'}
           patternLabel={activeUnit?.focusLabel}
         />
+
+        <SessionProgress completed={wordsCompleted} goal={wordGoal} questTitle={questTitle} />
 
         <View style={styles.card}>
           <View style={styles.cardHexEdge} />

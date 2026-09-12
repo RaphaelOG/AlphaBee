@@ -10,6 +10,8 @@ Children practice spelling through a two-round flow: first **look** at the word,
 - **Grade Level Quest** — sequenced K–5 phonics path (CVC, digraphs, blends, silent e, vowel teams, and more) plus sight-word units
 - **Practice Hive** — parents/teachers enter custom weekly spelling lists
 - **Look → Listen rounds** — spell once with the word visible, then again using text-to-speech (`expo-speech`)
+- **Session quests** — Quick Buzz (5), Honey Hunt (10), or Hive Hero (15) words, then a clear finish screen
+- **Daily streak** — complete one quest per day to keep your streak going (saved on device)
 - **Hexagonal UI** — honeycomb letter slots, keyboard keys, and buttons (SVG)
 - **Feedback & rewards** — gold flash / gentle shake, haptics, honey drops, stars, and a collectible hive
 

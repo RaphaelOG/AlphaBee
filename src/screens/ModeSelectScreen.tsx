@@ -1,29 +1,52 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { ModeSwitcher } from '../components/ModeSwitcher';
 import { PracticeHiveModal } from '../components/PracticeHiveModal';
 import { HoneycombButton } from '../components/HoneycombButton';
 import { Hexagon } from '../components/Hexagon';
+import { QuestPicker } from '../components/QuestPicker';
 import { colors } from '../theme';
 import type { GradeLevel } from '../data/words';
 import { getDefaultUnitId, getUnitById, gradeLabel } from '../data/curriculum';
+import { getQuestById, type QuestId } from '../data/quests';
+import { loadStreak } from '../utils/streak';
 import type { GameMode, RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ModeSelect'>;
-
-const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 export function ModeSelectScreen({ navigation }: Props) {
   const [mode, setMode] = useState<GameMode>('quest');
   const [grade, setGrade] = useState<GradeLevel>('1');
   const [unitId, setUnitId] = useState(() => getDefaultUnitId('1'));
+  const [questId, setQuestId] = useState<QuestId>('classic');
   const [practiceOpen, setPracticeOpen] = useState(false);
+  const [streakDays, setStreakDays] = useState(0);
+  const [completedToday, setCompletedToday] = useState(false);
 
   const activeUnit = getUnitById(unitId);
+  const quest = getQuestById(questId);
+
+  const refreshStreak = useCallback(() => {
+    void loadStreak().then((s) => {
+      setStreakDays(s.currentStreak);
+      setCompletedToday(s.completedToday);
+    });
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshStreak();
+    }, [refreshStreak]),
+  );
+
+  useEffect(() => {
+    refreshStreak();
+  }, [refreshStreak]);
 
   const handleGradeChange = (next: GradeLevel) => {
     setGrade(next);
@@ -31,12 +54,26 @@ export function ModeSelectScreen({ navigation }: Props) {
   };
 
   const startQuest = () => {
-    navigation.navigate('Game', { mode: 'quest', grade, unitId });
+    navigation.navigate('Game', {
+      mode: 'quest',
+      grade,
+      unitId,
+      wordGoal: quest.wordGoal,
+      questId: quest.id,
+      questTitle: quest.title,
+    });
   };
 
   const startPractice = (words: string[]) => {
     setPracticeOpen(false);
-    navigation.navigate('Game', { mode: 'practice', customWords: words });
+    const goal = Math.min(quest.wordGoal, Math.max(1, words.length));
+    navigation.navigate('Game', {
+      mode: 'practice',
+      customWords: words,
+      wordGoal: goal,
+      questId: quest.id,
+      questTitle: quest.title,
+    });
   };
 
   return (
@@ -80,12 +117,23 @@ export function ModeSelectScreen({ navigation }: Props) {
                 onOpenPractice={() => setPracticeOpen(true)}
               />
 
+              <View style={styles.questBlock}>
+                <QuestPicker
+                  selectedId={questId}
+                  onSelect={setQuestId}
+                  streakDays={streakDays}
+                  completedToday={completedToday}
+                />
+              </View>
+
               {mode === 'quest' ? (
                 <View style={styles.playBlock}>
-                  <Text style={styles.readyText}>Ready for {gradeLabel(grade)}?</Text>
+                  <Text style={styles.readyText}>
+                    {quest.title}: {quest.subtitle}
+                  </Text>
                   <Text style={styles.readySub}>
                     {activeUnit
-                      ? `Starting at “${activeUnit.title}” — look first, then listen`
+                      ? `${gradeLabel(grade)} · “${activeUnit.title}” · look then listen`
                       : 'Two rounds per word — look first, then listen'}
                   </Text>
                   <HoneycombButton label="Play" size={132} onPress={startQuest} />
@@ -121,12 +169,11 @@ const styles = StyleSheet.create({
   },
   gradient: {
     flexGrow: 1,
-    minHeight: '100%',
+    minHeight: Dimensions.get('window').height,
   },
   safe: {
     flexGrow: 1,
     marginTop: 50,
-    
   },
   bgHexRow: {
     position: 'absolute',
@@ -142,6 +189,10 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 36,
     alignItems: 'center',
+  },
+  questBlock: {
+    width: '100%',
+    marginTop: 16,
   },
   playBlock: {
     marginTop: 18,
@@ -159,6 +210,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 18,
     color: colors.text,
+    textAlign: 'center',
   },
   readySub: {
     fontFamily: 'Nunito_600SemiBold',

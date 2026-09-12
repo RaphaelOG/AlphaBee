@@ -15,6 +15,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LandingScreen } from './src/screens/LandingScreen';
 import { ModeSelectScreen } from './src/screens/ModeSelectScreen';
 import { GameScreen } from './src/screens/GameScreen';
+import { SessionCompleteScreen } from './src/screens/SessionCompleteScreen';
 import { HiveRewardsScreen } from './src/screens/HiveRewardsScreen';
 import type { RootStackParamList } from './src/navigation/types';
 import { colors } from './src/theme';
@@ -53,6 +54,7 @@ export default function App() {
           <Stack.Screen name="Landing" component={LandingScreen} />
           <Stack.Screen name="ModeSelect" component={ModeSelectScreen} />
           <Stack.Screen name="Game" component={GameScreen} />
+          <Stack.Screen name="SessionComplete" component={SessionCompleteScreen} />
           <Stack.Screen name="HiveRewards" component={HiveRewardsScreen} />
         </Stack.Navigator>
       </NavigationContainer>

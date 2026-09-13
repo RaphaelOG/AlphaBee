@@ -26,6 +26,22 @@ Children practice spelling through a two-round flow: first **look** at the word,
 | Motion | React Native `Animated` API |
 | Audio / feedback | `expo-speech`, `expo-haptics` |
 | Fonts | Nunito, Baloo 2 via Expo Google Fonts |
+| Backend | Fastify + Prisma + PostgreSQL (`backend/`) |
+
+### Backend (Postgres API)
+
+Parent accounts, child profiles, progress, Practice Hive lists, streaks, and quest sessions live in `backend/`.
+
+```bash
+cd backend
+npm install
+npm run db:up
+npm run db:push
+npm run db:generate
+npm run dev
+```
+
+See [backend/README.md](./backend/README.md) for the full API. The Expo client helpers are in `src/api/`.
 
 ## Getting Started
 

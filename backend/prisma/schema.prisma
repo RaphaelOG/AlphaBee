@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Adult account holder (COPPA-friendly: kids don't log in directly)
+model Parent {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  displayName  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  children    Child[]
+  customLists CustomList[]
+}
+
+/// Child profile under a parent — minimal PII (nickname only)
+model Child {
+  id           String   @id @default(cuid())
+  parentId     String
+  nickname     String
+  gradeLevel   String   @default("1") // K | 1 | 2 | 3 | 4 | 5
+  avatarKey    String   @default("bee")
+  activeUnitId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  parent       Parent         @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  progress     ChildProgress?
+  streak       DailyStreak?
+  wordMastery  WordMastery[]
+  sessions     GameSession[]
+  listProgress CustomListAssignment[]
+
+  @@index([parentId])
+}
+
+/// Aggregate hive rewards / totals for a child
+model ChildProgress {
+  id              String   @id @default(cuid())
+  childId         String   @unique
+  honeyTotal      Int      @default(0)
+  starsTotal      Int      @default(0)
+  wordsMastered   Int      @default(0)
+  questsCompleted Int      @default(0)
+  updatedAt       DateTime @updatedAt
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+}
+
+/// Per-word mastery for spaced practice later
+model WordMastery {
+  id             String    @id @default(cuid())
+  childId        String
+  word           String
+  gradeLevel     String?
+  unitId         String?
+  correctCount   Int       @default(0)
+  incorrectCount Int       @default(0)
+  status         String    @default("learning") // learning | practicing | mastered
+  lastSeenAt     DateTime  @default(now())
+  masteredAt     DateTime?
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([childId, word])
+  @@index([childId, status])
+}
+
+/// Daily streak (synced across devices)
+model DailyStreak {
+  id                String   @id @default(cuid())
+  childId           String   @unique
+  currentStreak     Int      @default(0)
+  longestStreak     Int      @default(0)
+  lastCompletedDate String? // YYYY-MM-DD local date from client
+  updatedAt         DateTime @updatedAt
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+}
+
+/// Completed spelling sessions / quests
+model GameSession {
+  id              String   @id @default(cuid())
+  childId         String
+  mode            String // quest | practice
+  questId         String?
+  questTitle      String?
+  wordGoal        Int
+  wordsCompleted  Int
+  honeyEarned     Int      @default(0)
+  starsEarned     Int      @default(0)
+  gradeLevel      String?
+  unitId          String?
+  customListId    String?
+  completedAt     DateTime @default(now())
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([childId, completedAt])
+}
+
+/// Parent/teacher custom vocabulary lists (Practice Hive)
+model CustomList {
+  id          String   @id @default(cuid())
+  parentId    String
+  name        String
+  words       String[] // Postgres text array
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent      Parent                 @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  assignments CustomListAssignment[]
+
+  @@index([parentId])
+}
+
+/// Which children can practice a given custom list
+model CustomListAssignment {
+  id           String @id @default(cuid())
+  customListId String
+  childId      String
+
+  customList CustomList @relation(fields: [customListId], references: [id], onDelete: Cascade)
+  child      Child      @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([customListId, childId])
+}

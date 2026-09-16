@@ -15,7 +15,9 @@ export function SessionProgress({ completed, goal, questTitle }: SessionProgress
   return (
     <View style={styles.wrap}>
       <View style={styles.topRow}>
-        <Text style={styles.questTitle}>{questTitle}</Text>
+        <Text style={styles.questTitle} numberOfLines={1}>
+          {questTitle}
+        </Text>
         <Text style={styles.count}>
           {completed}/{goal}
         </Text>
@@ -48,6 +50,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   questTitle: {
+    flex: 1,
+    flexShrink: 1,
+    marginRight: 8,
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 13,
     color: colors.honeyDark,
@@ -56,6 +61,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_900Black',
     fontSize: 15,
     color: colors.text,
+    flexShrink: 0,
   },
   track: {
     height: 10,

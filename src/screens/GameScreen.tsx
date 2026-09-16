@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,8 +10,10 @@ import { LetterSlots } from '../components/LetterSlots';
 import { HexKeyboard } from '../components/HexKeyboard';
 import { AlphaBee } from '../components/AlphaBee';
 import { SessionProgress } from '../components/SessionProgress';
+import { WordMeaningCue } from '../components/WordMeaningCue';
 import { colors, typography } from '../theme';
 import { createQuestSession, type CurriculumUnit } from '../data/curriculum';
+import { getWordCue } from '../data/wordCues';
 import { speakWord, stopSpeaking } from '../utils/speech';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -186,104 +188,119 @@ export function GameScreen({ navigation, route }: Props) {
   };
 
   const isListen = phase === 'listen';
+  const wordCue = useMemo(() => getWordCue(target), [target]);
+  const emphasizePicture = mode === 'practice' || grade === 'K' || grade === '1' || grade === '2';
 
   return (
     <LinearGradient colors={[colors.creamSoft, colors.skyTop, colors.cream]} style={styles.fill}>
       <StatusBar style="dark" />
-      <SafeAreaView style={styles.safe}>
-        <GameHeader
-          honey={honey}
-          grade={mode === 'quest' ? grade : undefined}
-          modeLabel={mode === 'quest' ? 'Grade Level Quest' : 'Practice Hive'}
-          patternLabel={activeUnit?.focusLabel}
-        />
+      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces
+        >
+          <GameHeader
+            honey={honey}
+            grade={mode === 'quest' ? grade : undefined}
+            modeLabel={mode === 'quest' ? 'Grade Level Quest' : 'Practice Hive'}
+            patternLabel={activeUnit?.focusLabel}
+          />
 
-        <SessionProgress completed={wordsCompleted} goal={wordGoal} questTitle={questTitle} />
+          <SessionProgress completed={wordsCompleted} goal={wordGoal} questTitle={questTitle} />
 
-        <View style={styles.card}>
-          <View style={styles.cardHexEdge} />
-          <AlphaBee size={56} happy={feedback === 'correct'} flipping={flipping} />
+          <View style={styles.card}>
+            <View style={styles.cardHexEdge} />
+            <AlphaBee size={48} happy={feedback === 'correct'} flipping={flipping} />
 
-          {activeUnit ? (
-            <View style={styles.unitBanner}>
-              <Text style={styles.unitBannerTitle}>{activeUnit.title}</Text>
-              <Text style={styles.unitBannerDesc} numberOfLines={2}>
-                {activeUnit.description}
+            {activeUnit ? (
+              <View style={styles.unitBanner}>
+                <Text style={styles.unitBannerTitle}>{activeUnit.title}</Text>
+                <Text style={styles.unitBannerDesc} numberOfLines={2}>
+                  {activeUnit.description}
+                </Text>
+              </View>
+            ) : null}
+
+            <View style={styles.phasePill}>
+              <Text style={styles.phasePillText}>
+                {isListen ? 'Round 2 · Listen & Spell' : 'Round 1 · Look & Spell'}
               </Text>
             </View>
-          ) : null}
 
-          <View style={styles.phasePill}>
-            <Text style={styles.phasePillText}>
-              {isListen ? 'Round 2 · Listen & Spell' : 'Round 1 · Look & Spell'}
+            <Text style={styles.prompt}>
+              {isListen ? 'Hear the word, then spell it' : 'Look, learn the meaning, then spell it'}
             </Text>
-          </View>
 
-          <Text style={styles.prompt}>
-            {isListen ? 'Hear the word, then spell it' : 'Look at the word, then spell it'}
-          </Text>
+            <View style={[styles.imagePlate, isListen && styles.imagePlateListen]}>
+              {isListen ? (
+                <>
+                  <Pressable
+                    onPress={() => {
+                      void playWord();
+                    }}
+                    hitSlop={16}
+                    disabled={locked || isSpeaking}
+                    style={[styles.hearBtn, isSpeaking && styles.hearBtnDisabled]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Hear the word again"
+                    accessibilityState={{ disabled: locked || isSpeaking, busy: isSpeaking }}
+                  >
+                    <Text style={styles.hearIcon}>♪</Text>
+                    <Text style={styles.hearLabel}>{isSpeaking ? 'Playing…' : 'Tap to hear'}</Text>
+                  </Pressable>
+                  <Text style={styles.hiddenHint}>{target.length} letters · meaning hidden</Text>
+                </>
+              ) : (
+                <>
+                  <WordMeaningCue cue={wordCue} emphasizePicture={emphasizePicture} />
+                  <View style={styles.spellBlock}>
+                    <Text style={styles.spellLabel}>Spell this word</Text>
+                    <Text style={styles.targetWord}>{target}</Text>
+                  </View>
+                </>
+              )}
+            </View>
 
-          <View style={[styles.imagePlate, isListen && styles.imagePlateListen]}>
-            {isListen ? (
-              <>
-                <Pressable
-                  onPress={() => {
-                    void playWord();
-                  }}
-                  hitSlop={16}
-                  disabled={locked || isSpeaking}
-                  style={[styles.hearBtn, isSpeaking && styles.hearBtnDisabled]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Hear the word again"
-                  accessibilityState={{ disabled: locked || isSpeaking, busy: isSpeaking }}
-                >
-                  <Text style={styles.hearIcon}>♪</Text>
-                  <Text style={styles.hearLabel}>{isSpeaking ? 'Playing…' : 'Tap to hear'}</Text>
-                </Pressable>
-                <Text style={styles.hiddenHint}>{target.length} letters</Text>
-              </>
+            <LetterSlots length={target.length} letters={input} feedback={feedback} />
+
+            {feedback === 'correct' ? (
+              <Text style={styles.feedbackGood}>
+                {isListen ? 'Buzz-tastic! Word mastered' : 'Nice! Now spell it from memory'}
+              </Text>
+            ) : feedback === 'incorrect' ? (
+              <Text style={styles.feedbackBad}>Almost — try again</Text>
             ) : (
-              <>
-                <Text style={styles.imageLetter}>{target[0]?.toUpperCase()}</Text>
-                <Text style={styles.targetWord}>{target}</Text>
-              </>
+              <Text style={styles.feedbackIdle}>
+                {isListen
+                  ? 'Listen carefully, then fill the slots'
+                  : 'Use the picture and meaning — then fill the honeycomb'}
+              </Text>
             )}
           </View>
 
-          <LetterSlots length={target.length} letters={input} feedback={feedback} />
+          <View style={styles.keyboardArea}>
+            <HexKeyboard onKey={onKey} onBackspace={onBackspace} disabled={locked} />
+            <Pressable
+              onPress={checkSpelling}
+              style={[styles.checkBtn, input.length !== target.length && styles.checkDisabled]}
+              disabled={input.length !== target.length || locked}
+            >
+              <Text style={styles.checkText}>Check</Text>
+            </Pressable>
+          </View>
 
-          {feedback === 'correct' ? (
-            <Text style={styles.feedbackGood}>
-              {isListen ? 'Buzz-tastic! Word mastered' : 'Nice! Now spell it from memory'}
-            </Text>
-          ) : feedback === 'incorrect' ? (
-            <Text style={styles.feedbackBad}>Almost — try again</Text>
-          ) : (
-            <Text style={styles.feedbackIdle}>
-              {isListen ? 'Listen carefully, then fill the slots' : 'Copy the letters into the honeycomb'}
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.keyboardArea}>
-          <HexKeyboard onKey={onKey} onBackspace={onBackspace} disabled={locked} />
-          <Pressable
-            onPress={checkSpelling}
-            style={[styles.checkBtn, input.length !== target.length && styles.checkDisabled]}
-            disabled={input.length !== target.length || locked}
-          >
-            <Text style={styles.checkText}>Check</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.footer}>
-          <Pressable onPress={() => navigation.goBack()}>
-            <Text style={styles.footerLink}>Modes</Text>
-          </Pressable>
-          <Pressable onPress={openHive}>
-            <Text style={styles.footerLink}>My Hive</Text>
-          </Pressable>
-        </View>
+          <View style={styles.footer}>
+            <Pressable onPress={() => navigation.goBack()}>
+              <Text style={styles.footerLink}>Modes</Text>
+            </Pressable>
+            <Pressable onPress={openHive}>
+              <Text style={styles.footerLink}>My Hive</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -292,14 +309,22 @@ export function GameScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   safe: { flex: 1 },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 16,
+  },
   card: {
     marginHorizontal: 16,
     backgroundColor: colors.white,
     borderRadius: 28,
-    paddingVertical: 18,
-    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 16,
+    paddingHorizontal: 14,
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     borderWidth: 3,
     borderColor: colors.honey,
     shadowColor: colors.brown,
@@ -325,6 +350,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderWidth: 1.5,
     borderColor: colors.honeyLight,
+    alignSelf: 'center',
   },
   unitBanner: {
     width: '100%',
@@ -333,12 +359,12 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.honey,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 2,
+    paddingVertical: 6,
+    alignItems: 'center',
   },
   unitBannerTitle: {
     fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 14,
+    fontSize: 13,
     color: colors.honeyDark,
     textAlign: 'center',
   },
@@ -354,40 +380,54 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_700Bold',
     fontSize: 12,
     color: colors.honeyDark,
+    textAlign: 'center',
   },
   prompt: {
     ...typography.subtitle,
-    marginTop: 4,
+    fontSize: 14,
+    marginTop: 2,
     textAlign: 'center',
+    alignSelf: 'stretch',
   },
   imagePlate: {
-    minWidth: 120,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    width: '100%',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     borderRadius: 22,
     backgroundColor: colors.creamSoft,
     borderWidth: 2,
     borderColor: colors.honeyLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 4,
-    gap: 4,
+    marginVertical: 2,
+    gap: 8,
   },
   imagePlateListen: {
     backgroundColor: colors.goldBright,
     borderColor: colors.honeyDark,
-    minWidth: 160,
+    paddingVertical: 16,
   },
-  imageLetter: {
-    fontFamily: 'Nunito_900Black',
-    fontSize: 28,
-    color: colors.gold,
+  spellBlock: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 2,
+    paddingTop: 2,
+    borderTopWidth: 1,
+    borderTopColor: colors.honeyLight,
+  },
+  spellLabel: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 11,
+    color: colors.honeyDark,
+    textAlign: 'center',
+    marginTop: 6,
   },
   targetWord: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 26,
     color: colors.honeyDark,
-    letterSpacing: 1,
+    letterSpacing: 1.5,
+    textAlign: 'center',
   },
   hearBtn: {
     alignItems: 'center',
@@ -401,45 +441,54 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_900Black',
     fontSize: 28,
     color: colors.honeyDark,
+    textAlign: 'center',
   },
   hearLabel: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 15,
     color: colors.text,
+    textAlign: 'center',
   },
   hiddenHint: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 12,
     color: colors.textMuted,
+    textAlign: 'center',
   },
   feedbackGood: {
     fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 15,
+    fontSize: 14,
     color: colors.honeyDark,
     textAlign: 'center',
+    alignSelf: 'stretch',
   },
   feedbackBad: {
     fontFamily: 'Nunito_700Bold',
-    fontSize: 15,
+    fontSize: 14,
     color: colors.softRed,
+    textAlign: 'center',
+    alignSelf: 'stretch',
   },
   feedbackIdle: {
     fontFamily: 'Nunito_600SemiBold',
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textMuted,
     textAlign: 'center',
+    alignSelf: 'stretch',
+    paddingHorizontal: 4,
   },
   keyboardArea: {
     marginTop: 12,
     paddingHorizontal: 8,
-    gap: 10,
+    gap: 8,
+    alignItems: 'center',
   },
   checkBtn: {
     alignSelf: 'center',
     backgroundColor: colors.gold,
     borderRadius: 18,
     paddingHorizontal: 36,
-    paddingVertical: 12,
+    paddingVertical: 11,
     borderWidth: 2,
     borderColor: colors.honeyDark,
   },
@@ -450,13 +499,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 18,
     color: colors.white,
+    textAlign: 'center',
   },
   footer: {
-    marginTop: 'auto',
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 28,
-    paddingVertical: 14,
+    paddingTop: 10,
+    paddingBottom: 10,
   },
   footerLink: {
     fontFamily: 'Nunito_700Bold',

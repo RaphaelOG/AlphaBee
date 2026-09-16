@@ -65,19 +65,21 @@ export function HexKeyboard({ onKey, onBackspace, disabled }: HexKeyboardProps) 
 const styles = StyleSheet.create({
   wrap: {
     width: '100%',
-    gap: 8,
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 2,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 4,
+    alignItems: 'center',
+    gap: 3,
   },
   rowInset: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
   },
   rowInsetMore: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   },
   key: {
     alignItems: 'center',

@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import * as Speech from 'expo-speech';
+import { soundManager } from '../audio/SoundManager';
 
 let preferredVoice: string | undefined;
 let voiceIsEnhanced = false;
@@ -39,6 +40,7 @@ async function resolveVoice(): Promise<{ voice?: string; enhanced: boolean }> {
 export async function speakWord(word: string): Promise<void> {
   const text = word.trim();
   if (!text) return;
+  if (!soundManager.getSettings().voiceEnabled) return;
 
   try {
     await Speech.stop();

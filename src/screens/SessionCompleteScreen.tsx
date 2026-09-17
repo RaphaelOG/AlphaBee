@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AlphaBee } from '../components/AlphaBee';
 import { Hexagon } from '../components/Hexagon';
+import { useAudio } from '../audio';
 import { colors, typography } from '../theme';
 import { getQuestByGoal } from '../data/quests';
 import { recordQuestCompletion, type StreakState } from '../utils/streak';
@@ -14,11 +15,13 @@ import type { RootStackParamList } from '../navigation/types';
 type Props = NativeStackScreenProps<RootStackParamList, 'SessionComplete'>;
 
 export function SessionCompleteScreen({ navigation, route }: Props) {
+  const { playSfx } = useAudio();
   const { honey, stars, wordsCompleted, wordGoal, questTitle } = route.params;
   const quest = getQuestByGoal(wordGoal);
   const [streak, setStreak] = useState<StreakState | null>(null);
 
   useEffect(() => {
+    playSfx('complete');
     let alive = true;
     void recordQuestCompletion().then((next) => {
       if (alive) setStreak(next);
@@ -26,7 +29,7 @@ export function SessionCompleteScreen({ navigation, route }: Props) {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [playSfx]);
 
   return (
     <LinearGradient colors={[colors.skyTop, colors.cream, colors.honeyLight]} style={styles.fill}>

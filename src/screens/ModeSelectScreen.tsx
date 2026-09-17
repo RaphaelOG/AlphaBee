@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -107,6 +107,15 @@ export function ModeSelectScreen({ navigation }: Props) {
             </View>
 
             <View style={styles.content}>
+              <View style={styles.topLinks}>
+                <Pressable onPress={() => navigation.goBack()} hitSlop={10}>
+                  <Text style={styles.link}>Home</Text>
+                </Pressable>
+                <Pressable onPress={() => navigation.navigate('Settings')} hitSlop={10}>
+                  <Text style={styles.link}>Settings</Text>
+                </Pressable>
+              </View>
+
               <ModeSwitcher
                 mode={mode}
                 grade={grade}
@@ -189,6 +198,17 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 36,
     alignItems: 'center',
+  },
+  topLinks: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  link: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 14,
+    color: colors.honeyDark,
   },
   questBlock: {
     width: '100%',

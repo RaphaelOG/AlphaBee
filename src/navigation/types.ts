@@ -6,6 +6,7 @@ export type GameMode = 'quest' | 'practice';
 export type RootStackParamList = {
   Landing: undefined;
   ModeSelect: undefined;
+  Settings: undefined;
   Game: {
     mode: GameMode;
     grade?: GradeLevel;

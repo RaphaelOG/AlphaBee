@@ -11,6 +11,7 @@ import { HexKeyboard } from '../components/HexKeyboard';
 import { AlphaBee } from '../components/AlphaBee';
 import { SessionProgress } from '../components/SessionProgress';
 import { WordMeaningCue } from '../components/WordMeaningCue';
+import { useAudio } from '../audio';
 import { colors, typography } from '../theme';
 import { createQuestSession, type CurriculumUnit } from '../data/curriculum';
 import { getWordCue } from '../data/wordCues';
@@ -21,6 +22,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 type SpellPhase = 'look' | 'listen';
 
 export function GameScreen({ navigation, route }: Props) {
+  const { playSfx } = useAudio();
   const {
     mode,
     grade = '1',
@@ -121,12 +123,14 @@ export function GameScreen({ navigation, route }: Props) {
 
   const onKey = (letter: string) => {
     if (locked || input.length >= target.length) return;
+    playSfx('tap');
     setFeedback('idle');
     setInput((prev) => [...prev, letter.toLowerCase()]);
   };
 
   const onBackspace = () => {
     if (locked) return;
+    playSfx('tap');
     setFeedback('idle');
     setInput((prev) => prev.slice(0, -1));
   };
@@ -142,7 +146,12 @@ export function GameScreen({ navigation, route }: Props) {
       const nextHoney = honey + honeyGain;
       const nextStars = phase === 'listen' ? stars + 1 : stars;
       setHoney(nextHoney);
-      if (phase === 'listen') setStars(nextStars);
+      if (phase === 'listen') {
+        setStars(nextStars);
+        playSfx('hive');
+      } else {
+        playSfx('ding');
+      }
       try {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {
@@ -156,6 +165,7 @@ export function GameScreen({ navigation, route }: Props) {
         setLocked(false);
 
         if (phase === 'look') {
+          playSfx('whoosh');
           setPhase('listen');
         } else {
           const completed = wordsCompleted + 1;
@@ -163,12 +173,14 @@ export function GameScreen({ navigation, route }: Props) {
           if (completed >= wordGoal) {
             finishSession(nextHoney, nextStars, completed);
           } else {
+            playSfx('whoosh');
             advanceToNextWord();
           }
         }
       }, 900);
     } else {
       setFeedback('incorrect');
+      playSfx('buzz');
       try {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       } catch {
@@ -295,6 +307,9 @@ export function GameScreen({ navigation, route }: Props) {
           <View style={styles.footer}>
             <Pressable onPress={() => navigation.goBack()}>
               <Text style={styles.footerLink}>Modes</Text>
+            </Pressable>
+            <Pressable onPress={() => navigation.navigate('Settings')}>
+              <Text style={styles.footerLink}>Settings</Text>
             </Pressable>
             <Pressable onPress={openHive}>
               <Text style={styles.footerLink}>My Hive</Text>

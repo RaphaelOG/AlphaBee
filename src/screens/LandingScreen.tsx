@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +17,17 @@ export function LandingScreen({ navigation }: Props) {
     <LinearGradient colors={[colors.skyTop, colors.cream, colors.skyBottom]} style={styles.fill}>
       <StatusBar style="dark" />
       <SafeAreaView style={styles.safe}>
+        <View style={styles.topBar}>
+          <Pressable
+            onPress={() => navigation.navigate('Settings')}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Open hive settings"
+          >
+            <Text style={styles.settingsLink}>Settings</Text>
+          </Pressable>
+        </View>
+
         <View style={styles.hiveCorner} pointerEvents="none">
           <HiveStructure size={130} />
         </View>
@@ -49,6 +60,17 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
   },
+  topBar: {
+    alignItems: 'flex-end',
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    zIndex: 3,
+  },
+  settingsLink: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 15,
+    color: colors.honeyDark,
+  },
   hiveCorner: {
     position: 'absolute',
     top: 105,
@@ -62,7 +84,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     zIndex: 2,
     paddingBottom: 0,
-    paddingTop: 150,
+    paddingTop: 120,
   },
   brand: {
     ...typography.brandHero,

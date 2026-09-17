@@ -10,6 +10,8 @@ Children practice spelling through a two-round flow: first **look** at the word,
 - **Grade Level Quest** — sequenced K–5 phonics path (CVC, digraphs, blends, silent e, vowel teams, and more) plus sight-word units
 - **Practice Hive** — parents/teachers enter custom weekly spelling lists
 - **Look → Listen rounds** — Round 1 shows a picture + kid-friendly meaning with the word; Round 2 hides them and uses text-to-speech (`expo-speech`)
+- **Sound design** — ding / buzz / hive SFX, celebration fanfare, and a hive music collection (Sunny Hive, Honey Hum, Garden Buzz, Golden Morning, Bee Dance)
+- **Hive Settings** — toggle sound effects, music, and word voice independently; pick a music track
 - **Session quests** — Quick Buzz (5), Honey Hunt (10), or Hive Hero (15) words, then a clear finish screen
 - **Daily streak** — complete one quest per day to keep your streak going (saved on device)
 - **Hexagonal UI** — honeycomb letter slots, keyboard keys, and buttons (SVG)
@@ -24,7 +26,7 @@ Children practice spelling through a two-round flow: first **look** at the word,
 | Navigation | React Navigation (native stack) |
 | UI | `react-native-svg`, `expo-linear-gradient`, custom theme tokens |
 | Motion | React Native `Animated` API |
-| Audio / feedback | `expo-speech`, `expo-haptics` |
+| Audio / feedback | `expo-audio`, `expo-speech`, `expo-haptics` |
 | Fonts | Nunito, Baloo 2 via Expo Google Fonts |
 | Backend | Fastify + Prisma + PostgreSQL (`backend/`) |
 
@@ -70,15 +72,19 @@ Then press:
 
 ```
 AlphaBee/
-├── App.tsx                 # Root: fonts + navigation
+├── App.tsx                 # Root: fonts + navigation + AudioProvider
 ├── app.json                # Expo config
+├── scripts/
+│   └── generate-audio.js   # Regenerates original SFX + music WAVs
 ├── src/
+│   ├── audio/              # Sound manager, music catalog, settings
 │   ├── components/         # Reusable UI (Hexagon, AlphaBee, keyboard, etc.)
-│   ├── screens/            # Landing, ModeSelect, Game, HiveRewards
+│   ├── screens/            # Landing, ModeSelect, Game, Settings, HiveRewards
 │   ├── navigation/         # Typed stack param list
-│   ├── data/               # Grade-level word banks
+│   ├── data/               # Curriculum, quests, word cues
 │   └── theme/              # Colors & typography
-└── assets/                 # App icons & splash
+└── assets/
+    └── audio/              # ding/buzz/hive SFX + hive music loops
 ```
 
 ### Screens
@@ -87,7 +93,9 @@ AlphaBee/
 |--------|--------|---------|
 | `LandingScreen` | `Landing` | Splash / main menu |
 | `ModeSelectScreen` | `ModeSelect` | Choose Grade Quest or Practice Hive |
+| `SettingsScreen` | `Settings` | Sound effects, music, word voice toggles + track picker |
 | `GameScreen` | `Game` | Spelling gameplay |
+| `SessionCompleteScreen` | `SessionComplete` | Quest finish + streak |
 | `HiveRewardsScreen` | `HiveRewards` | Progress & collectibles |
 
 ## How Gameplay Works

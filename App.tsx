@@ -13,12 +13,15 @@ import {
 } from '@expo-google-fonts/nunito';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LandingScreen } from './src/screens/LandingScreen';
+import { AuthScreen } from './src/screens/AuthScreen';
+import { ChildSelectScreen } from './src/screens/ChildSelectScreen';
 import { ModeSelectScreen } from './src/screens/ModeSelectScreen';
 import { GameScreen } from './src/screens/GameScreen';
 import { SessionCompleteScreen } from './src/screens/SessionCompleteScreen';
 import { HiveRewardsScreen } from './src/screens/HiveRewardsScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { AudioProvider } from './src/audio';
+import { AuthProvider } from './src/auth';
 import type { RootStackParamList } from './src/navigation/types';
 import { colors } from './src/theme';
 
@@ -44,25 +47,29 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <AudioProvider>
-        <NavigationContainer>
-          <Stack.Navigator
-            initialRouteName="Landing"
-            screenOptions={{
-              headerShown: false,
-              animation: 'fade',
-              contentStyle: { backgroundColor: colors.cream },
-            }}
-          >
-            <Stack.Screen name="Landing" component={LandingScreen} />
-            <Stack.Screen name="ModeSelect" component={ModeSelectScreen} />
-            <Stack.Screen name="Settings" component={SettingsScreen} />
-            <Stack.Screen name="Game" component={GameScreen} />
-            <Stack.Screen name="SessionComplete" component={SessionCompleteScreen} />
-            <Stack.Screen name="HiveRewards" component={HiveRewardsScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </AudioProvider>
+      <AuthProvider>
+        <AudioProvider>
+          <NavigationContainer>
+            <Stack.Navigator
+              initialRouteName="Landing"
+              screenOptions={{
+                headerShown: false,
+                animation: 'fade',
+                contentStyle: { backgroundColor: colors.cream },
+              }}
+            >
+              <Stack.Screen name="Landing" component={LandingScreen} />
+              <Stack.Screen name="Auth" component={AuthScreen} />
+              <Stack.Screen name="ChildSelect" component={ChildSelectScreen} />
+              <Stack.Screen name="ModeSelect" component={ModeSelectScreen} />
+              <Stack.Screen name="Settings" component={SettingsScreen} />
+              <Stack.Screen name="Game" component={GameScreen} />
+              <Stack.Screen name="SessionComplete" component={SessionCompleteScreen} />
+              <Stack.Screen name="HiveRewards" component={HiveRewardsScreen} />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </AudioProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

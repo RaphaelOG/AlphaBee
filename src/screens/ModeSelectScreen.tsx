@@ -15,14 +15,17 @@ import type { GradeLevel } from '../data/words';
 import { getDefaultUnitId, getUnitById, gradeLabel } from '../data/curriculum';
 import { getQuestById, type QuestId } from '../data/quests';
 import { loadStreak } from '../utils/streak';
+import { useAuth } from '../auth';
 import type { GameMode, RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ModeSelect'>;
 
 export function ModeSelectScreen({ navigation }: Props) {
+  const { isAuthenticated, activeChild } = useAuth();
+  const initialGrade = (activeChild?.gradeLevel as GradeLevel | undefined) ?? '1';
   const [mode, setMode] = useState<GameMode>('quest');
-  const [grade, setGrade] = useState<GradeLevel>('1');
-  const [unitId, setUnitId] = useState(() => getDefaultUnitId('1'));
+  const [grade, setGrade] = useState<GradeLevel>(initialGrade);
+  const [unitId, setUnitId] = useState(() => getDefaultUnitId(initialGrade));
   const [questId, setQuestId] = useState<QuestId>('classic');
   const [practiceOpen, setPracticeOpen] = useState(false);
   const [streakDays, setStreakDays] = useState(0);
@@ -40,13 +43,24 @@ export function ModeSelectScreen({ navigation }: Props) {
 
   useFocusEffect(
     useCallback(() => {
+      if (!isAuthenticated) {
+        navigation.replace('Auth');
+        return;
+      }
+      if (!activeChild) {
+        navigation.replace('ChildSelect');
+        return;
+      }
       refreshStreak();
-    }, [refreshStreak]),
+    }, [isAuthenticated, activeChild, navigation, refreshStreak]),
   );
 
   useEffect(() => {
-    refreshStreak();
-  }, [refreshStreak]);
+    if (!activeChild?.gradeLevel) return;
+    const next = activeChild.gradeLevel as GradeLevel;
+    setGrade(next);
+    setUnitId(getDefaultUnitId(next));
+  }, [activeChild?.id, activeChild?.gradeLevel]);
 
   const handleGradeChange = (next: GradeLevel) => {
     setGrade(next);
@@ -111,9 +125,18 @@ export function ModeSelectScreen({ navigation }: Props) {
                 <Pressable onPress={() => navigation.goBack()} hitSlop={10}>
                   <Text style={styles.link}>Home</Text>
                 </Pressable>
-                <Pressable onPress={() => navigation.navigate('Settings')} hitSlop={10}>
-                  <Text style={styles.link}>Settings</Text>
-                </Pressable>
+                <View style={styles.topRight}>
+                  {activeChild ? (
+                    <Pressable onPress={() => navigation.navigate('ChildSelect')} hitSlop={10}>
+                      <Text style={styles.childChip} numberOfLines={1}>
+                        {activeChild.nickname}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                  <Pressable onPress={() => navigation.navigate('Settings')} hitSlop={10}>
+                    <Text style={styles.link}>Settings</Text>
+                  </Pressable>
+                </View>
               </View>
 
               <ModeSwitcher
@@ -203,12 +226,31 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
+  },
+  topRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   link: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 14,
     color: colors.honeyDark,
+  },
+  childChip: {
+    maxWidth: 120,
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: colors.honeyDark,
+    backgroundColor: colors.white,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: colors.honeyLight,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   questBlock: {
     width: '100%',

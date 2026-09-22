@@ -1,5 +1,7 @@
 import { apiRequest } from './client';
 
+export { ApiError, API_BASE_URL } from './client';
+
 export type Parent = {
   id: string;
   email: string;

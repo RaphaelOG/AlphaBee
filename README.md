@@ -7,6 +7,7 @@ Children practice spelling through a two-round flow: first **look** at the word,
 ## Features
 
 - **Landing experience** — warm cream/honey palette, animated bee circle, honeycomb CTA
+- **Parent auth + child select** — adults sign in; pick or create a learner profile before play (JWT stored on device)
 - **Grade Level Quest** — sequenced K–5 phonics path (CVC, digraphs, blends, silent e, vowel teams, and more) plus sight-word units
 - **Practice Hive** — parents/teachers enter custom weekly spelling lists
 - **Look → Listen rounds** — Round 1 shows a picture + kid-friendly meaning with the word; Round 2 hides them and uses text-to-speech (`expo-speech`)
@@ -92,6 +93,8 @@ AlphaBee/
 | Screen | Route | Purpose |
 |--------|--------|---------|
 | `LandingScreen` | `Landing` | Splash / main menu |
+| `AuthScreen` | `Auth` | Parent sign-in / register |
+| `ChildSelectScreen` | `ChildSelect` | Pick or create a learner profile |
 | `ModeSelectScreen` | `ModeSelect` | Choose Grade Quest or Practice Hive |
 | `SettingsScreen` | `Settings` | Sound effects, music, word voice toggles + track picker |
 | `GameScreen` | `Game` | Spelling gameplay |

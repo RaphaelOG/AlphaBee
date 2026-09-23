@@ -29,6 +29,7 @@ export function GameScreen({ navigation, route }: Props) {
     unitId,
     customWords = [],
     wordGoal,
+    questId,
     questTitle,
   } = route.params;
 
@@ -78,9 +79,13 @@ export function GameScreen({ navigation, route }: Props) {
         wordsCompleted: completed,
         wordGoal,
         questTitle,
+        mode,
+        questId,
+        grade,
+        unitId: activeUnit?.id ?? unitId,
       });
     },
-    [navigation, wordGoal, questTitle],
+    [navigation, wordGoal, questTitle, mode, questId, grade, unitId, activeUnit?.id],
   );
 
   const advanceToNextWord = useCallback(() => {

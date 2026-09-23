@@ -26,6 +26,10 @@ export type RootStackParamList = {
     wordsCompleted: number;
     wordGoal: number;
     questTitle: string;
+    mode: GameMode;
+    questId: QuestId;
+    grade?: GradeLevel;
+    unitId?: string;
   };
   HiveRewards: {
     honey: number;

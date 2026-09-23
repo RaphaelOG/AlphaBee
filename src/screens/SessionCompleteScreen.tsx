@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
@@ -7,29 +7,108 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AlphaBee } from '../components/AlphaBee';
 import { Hexagon } from '../components/Hexagon';
 import { useAudio } from '../audio';
+import { useAuth } from '../auth';
 import { colors, typography } from '../theme';
 import { getQuestByGoal } from '../data/quests';
 import { recordQuestCompletion, type StreakState } from '../utils/streak';
+import { postCompletedSession } from '../utils/sessionSync';
 import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SessionComplete'>;
 
 export function SessionCompleteScreen({ navigation, route }: Props) {
   const { playSfx } = useAudio();
-  const { honey, stars, wordsCompleted, wordGoal, questTitle } = route.params;
+  const { token, activeChild, refreshChildren } = useAuth();
+  const {
+    honey,
+    stars,
+    wordsCompleted,
+    wordGoal,
+    questTitle,
+    mode,
+    questId,
+    grade,
+    unitId,
+  } = route.params;
   const quest = getQuestByGoal(wordGoal);
   const [streak, setStreak] = useState<StreakState | null>(null);
+  const [syncStatus, setSyncStatus] = useState<'saving' | 'saved' | 'local' | 'error'>('saving');
+  const postedRef = useRef(false);
 
   useEffect(() => {
     playSfx('complete');
+    if (postedRef.current) return;
+    postedRef.current = true;
+
     let alive = true;
-    void recordQuestCompletion().then((next) => {
-      if (alive) setStreak(next);
-    });
+    void (async () => {
+      // Always keep a device-local streak so Mode Select stays useful offline
+      const localStreak = await recordQuestCompletion();
+
+      if (token && activeChild) {
+        const result = await postCompletedSession({
+          token,
+          childId: activeChild.id,
+          payload: {
+            mode,
+            questId,
+            questTitle,
+            wordGoal,
+            wordsCompleted,
+            honeyEarned: honey,
+            starsEarned: stars,
+            gradeLevel: grade,
+            unitId,
+            applyRewards: true,
+          },
+        });
+
+        if (!alive) return;
+
+        if (result.synced && result.streak) {
+          setStreak(result.streak);
+          setSyncStatus('saved');
+          void refreshChildren().catch(() => undefined);
+          return;
+        }
+
+        setStreak(localStreak);
+        setSyncStatus(result.error ? 'error' : 'local');
+        return;
+      }
+
+      if (!alive) return;
+      setStreak(localStreak);
+      setSyncStatus('local');
+    })();
+
     return () => {
       alive = false;
     };
-  }, [playSfx]);
+  }, [
+    playSfx,
+    token,
+    activeChild,
+    mode,
+    questId,
+    questTitle,
+    wordGoal,
+    wordsCompleted,
+    honey,
+    stars,
+    grade,
+    unitId,
+    refreshChildren,
+  ]);
+
+  const syncHint =
+    syncStatus === 'saving'
+      ? 'Saving your hive…'
+      : syncStatus === 'saved'
+        ? 'Saved to your hive'
+        : syncStatus === 'error'
+          ? 'Saved on this device (cloud sync failed)'
+          : 'Saved on this device';
 
   return (
     <LinearGradient colors={[colors.skyTop, colors.cream, colors.honeyLight]} style={styles.fill}>
@@ -64,9 +143,7 @@ export function SessionCompleteScreen({ navigation, route }: Props) {
 
           <View style={styles.streakBox}>
             <View style={styles.streakBadge}>
-              <Text style={styles.streakBadgeText}>
-                {streak?.currentStreak ?? '!'}
-              </Text>
+              <Text style={styles.streakBadgeText}>{streak?.currentStreak ?? '!'}</Text>
             </View>
             <View style={styles.streakTextBlock}>
               <Text style={styles.streakTitle}>
@@ -81,6 +158,8 @@ export function SessionCompleteScreen({ navigation, route }: Props) {
               </Text>
             </View>
           </View>
+
+          <Text style={styles.syncHint}>{syncHint}</Text>
         </View>
 
         <Pressable
@@ -199,6 +278,12 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 2,
     lineHeight: 16,
+  },
+  syncHint: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 12,
+    color: colors.textMuted,
+    textAlign: 'center',
   },
   primaryBtn: {
     marginTop: 22,

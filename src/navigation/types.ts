@@ -32,7 +32,8 @@ export type RootStackParamList = {
     unitId?: string;
   };
   HiveRewards: {
-    honey: number;
-    stars: number;
-  };
+    /** Optional session earnings shown as a hint; lifetime totals load from API */
+    honey?: number;
+    stars?: number;
+  } | undefined;
 };

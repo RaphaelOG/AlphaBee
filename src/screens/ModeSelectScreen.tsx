@@ -14,14 +14,14 @@ import { colors } from '../theme';
 import type { GradeLevel } from '../data/words';
 import { getDefaultUnitId, getUnitById, gradeLabel } from '../data/curriculum';
 import { getQuestById, type QuestId } from '../data/quests';
-import { loadStreak } from '../utils/streak';
+import { loadHiveStats } from '../utils/hiveSync';
 import { useAuth } from '../auth';
 import type { GameMode, RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ModeSelect'>;
 
 export function ModeSelectScreen({ navigation }: Props) {
-  const { isAuthenticated, activeChild } = useAuth();
+  const { isAuthenticated, activeChild, token } = useAuth();
   const initialGrade = (activeChild?.gradeLevel as GradeLevel | undefined) ?? '1';
   const [mode, setMode] = useState<GameMode>('quest');
   const [grade, setGrade] = useState<GradeLevel>(initialGrade);
@@ -35,11 +35,25 @@ export function ModeSelectScreen({ navigation }: Props) {
   const quest = getQuestById(questId);
 
   const refreshStreak = useCallback(() => {
-    void loadStreak().then((s) => {
-      setStreakDays(s.currentStreak);
-      setCompletedToday(s.completedToday);
+    void loadHiveStats({
+      token,
+      childId: activeChild?.id,
+      fallbackHoney: activeChild?.progress?.honeyTotal,
+      fallbackStars: activeChild?.progress?.starsTotal,
+      fallbackWords: activeChild?.progress?.wordsMastered,
+      fallbackQuests: activeChild?.progress?.questsCompleted,
+    }).then((stats) => {
+      setStreakDays(stats.streak.currentStreak);
+      setCompletedToday(stats.streak.completedToday);
     });
-  }, []);
+  }, [
+    token,
+    activeChild?.id,
+    activeChild?.progress?.honeyTotal,
+    activeChild?.progress?.starsTotal,
+    activeChild?.progress?.wordsMastered,
+    activeChild?.progress?.questsCompleted,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -133,6 +147,9 @@ export function ModeSelectScreen({ navigation }: Props) {
                       </Text>
                     </Pressable>
                   ) : null}
+                  <Pressable onPress={() => navigation.navigate('HiveRewards')} hitSlop={10}>
+                    <Text style={styles.link}>My Hive</Text>
+                  </Pressable>
                   <Pressable onPress={() => navigation.navigate('Settings')} hitSlop={10}>
                     <Text style={styles.link}>Settings</Text>
                   </Pressable>

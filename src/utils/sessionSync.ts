@@ -1,5 +1,6 @@
 import { sessionsApi, streakApi, type GameSessionPayload } from '../api';
 import { todayKey, type StreakState } from './streak';
+import { toStreakState } from './hiveSync';
 
 export type SessionSyncResult = {
   /** Whether the session was saved to the API */
@@ -7,21 +8,6 @@ export type SessionSyncResult = {
   streak: StreakState | null;
   error?: string;
 };
-
-function toStreakState(streak: {
-  currentStreak: number;
-  longestStreak: number;
-  lastCompletedDate: string | null;
-  completedToday?: boolean;
-}): StreakState {
-  const today = todayKey();
-  return {
-    currentStreak: streak.currentStreak,
-    longestStreak: streak.longestStreak,
-    lastCompletedDate: streak.lastCompletedDate,
-    completedToday: streak.completedToday ?? streak.lastCompletedDate === today,
-  };
-}
 
 /**
  * POST a finished quest/practice session to the backend (progress + streak).

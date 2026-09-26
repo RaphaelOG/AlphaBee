@@ -1,16 +1,28 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { useAudio } from '../audio';
 import type { MusicTrackId } from '../audio';
 import { AlphaBee } from '../components/AlphaBee';
-import { colors, typography } from '../theme';
+import { ChunkyButton, KidCard, Pill, SpeechBubble, Sticker, type KidTone } from '../components/KidUI';
+import { FlowerMeadow, HoneycombPattern, SkyScene } from '../components/SceneDecor';
+import { NavButton, TopNav } from '../components/TopNav';
+import { colors, fonts } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
+
+const TRACK_LOOK: Record<MusicTrackId, { emoji: string; tone: KidTone }> = {
+  sunny_hive: { emoji: '☀️', tone: 'honey' },
+  honey_hum: { emoji: '🍯', tone: 'honey' },
+  garden_buzz: { emoji: '🌸', tone: 'leaf' },
+  golden_morning: { emoji: '🌅', tone: 'coral' },
+  bee_dance: { emoji: '💃', tone: 'berry' },
+};
 
 export function SettingsScreen({ navigation }: Props) {
   const {
@@ -25,47 +37,44 @@ export function SettingsScreen({ navigation }: Props) {
 
   const onToggleSfx = (value: boolean) => {
     void setSoundEffectsEnabled(value);
-    if (value) playSfx('ding');
-  };
-
-  const onToggleMusic = (value: boolean) => {
-    void setMusicEnabled(value);
-  };
-
-  const onToggleVoice = (value: boolean) => {
-    void setVoiceEnabled(value);
   };
 
   const onPickTrack = (id: MusicTrackId) => {
     void setMusicTrackId(id);
-    playSfx('hive');
   };
 
   return (
-    <LinearGradient colors={[colors.skyTop, colors.cream, colors.skyBottom]} style={styles.fill}>
+    <LinearGradient colors={[colors.sky, colors.skyTop, colors.creamSoft]} style={styles.fill}>
       <StatusBar style="dark" />
+      <HoneycombPattern opacity={0.07} rows={40} />
+      <SkyScene sunSize={72} />
+      <FlowerMeadow height={96} />
       <SafeAreaView style={styles.safe}>
-        <View style={styles.header}>
-          <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-            <Text style={styles.back}>Back</Text>
-          </Pressable>
-          <Text style={styles.headerTitle}>Hive Settings</Text>
-          <View style={styles.backSpacer} />
-        </View>
+        <TopNav
+          left={<NavButton icon="arrow-back" label="Back" onPress={() => navigation.goBack()} />}
+          title="Hive Settings"
+        />
 
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <AlphaBee size={56} />
-          <Text style={styles.title}>Sound & Music</Text>
-          <Text style={styles.subtitle}>
-            Quiet the hive when you need calm focus — or keep the buzz going.
-          </Text>
+          <View style={styles.hero}>
+            <AlphaBee size={88} mood="happy" />
+            <SpeechBubble
+              text="Quiet the hive for focus — or keep the buzz going!"
+              tail="left"
+              style={styles.bubble}
+            />
+            <Sticker emoji="🎵" tone="berry" size={46} rotate={12} style={styles.noteSticker} />
+          </View>
 
-          <View style={styles.card}>
+          <Text style={styles.title}>Sound & Music</Text>
+
+          <KidCard tone="honey" drip contentStyle={styles.toggleCard}>
             <ToggleRow
+              emoji="🔔"
               label="Sound effects"
               hint="Ding, buzz, hive, and key taps"
               value={settings.soundEffectsEnabled}
@@ -73,53 +82,65 @@ export function SettingsScreen({ navigation }: Props) {
             />
             <View style={styles.divider} />
             <ToggleRow
+              emoji="🎶"
               label="Music"
               hint="Background honey-hive melodies"
               value={settings.musicEnabled}
-              onValueChange={onToggleMusic}
+              onValueChange={(v) => {
+                void setMusicEnabled(v);
+              }}
             />
             <View style={styles.divider} />
             <ToggleRow
+              emoji="🗣️"
               label="Word voice"
               hint="Speak the spelling word in Round 2"
               value={settings.voiceEnabled}
-              onValueChange={onToggleVoice}
+              onValueChange={(v) => {
+                void setVoiceEnabled(v);
+              }}
             />
-          </View>
+          </KidCard>
 
-          <Text style={styles.sectionLabel}>Music collection</Text>
-          <Text style={styles.sectionHint}>Pick a track that fits your hive mood</Text>
+          <View style={styles.sectionHead}>
+            <Text style={styles.sectionLabel}>Music collection</Text>
+            <Text style={styles.sectionHint}>Tap a track that fits your hive mood</Text>
+          </View>
 
           <View style={styles.trackList}>
             {tracks.map((track) => {
               const selected = settings.musicTrackId === track.id;
+              const look = TRACK_LOOK[track.id];
               return (
-                <Pressable
+                <KidCard
                   key={track.id}
+                  tone={look.tone}
+                  tinted={selected}
+                  selected={selected}
                   onPress={() => onPickTrack(track.id)}
-                  style={[styles.trackCard, selected && styles.trackCardSelected]}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
+                  contentStyle={styles.trackCard}
                 >
-                  <View style={styles.trackTop}>
-                    <Text style={[styles.trackTitle, selected && styles.trackTitleSelected]}>
-                      {track.title}
-                    </Text>
-                    {selected ? <Text style={styles.playingTag}>Playing</Text> : null}
+                  <View style={styles.trackEmoji}>
+                    <Text style={styles.trackEmojiText}>{look.emoji}</Text>
                   </View>
-                  <Text style={styles.trackBlurb}>{track.blurb}</Text>
-                </Pressable>
+                  <View style={styles.trackCopy}>
+                    <Text style={styles.trackTitle}>{track.title}</Text>
+                    <Text style={styles.trackBlurb}>{track.blurb}</Text>
+                  </View>
+                  {selected ? <Pill label="Playing" tone={look.tone} emoji="▶" solid /> : null}
+                </KidCard>
               );
             })}
           </View>
 
-          <Pressable
-            style={styles.previewBtn}
+          <ChunkyButton
+            label="Preview celebration"
+            tone="coral"
+            icon={<Ionicons name="sparkles" size={20} color={colors.white} />}
             onPress={() => playSfx('complete')}
             disabled={!settings.soundEffectsEnabled}
-          >
-            <Text style={styles.previewText}>Preview celebration sound</Text>
-          </Pressable>
+            style={styles.previewBtn}
+          />
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>
@@ -127,11 +148,13 @@ export function SettingsScreen({ navigation }: Props) {
 }
 
 function ToggleRow({
+  emoji,
   label,
   hint,
   value,
   onValueChange,
 }: {
+  emoji: string;
   label: string;
   hint: string;
   value: boolean;
@@ -139,6 +162,7 @@ function ToggleRow({
 }) {
   return (
     <View style={styles.toggleRow}>
+      <Text style={styles.toggleEmoji}>{emoji}</Text>
       <View style={styles.toggleCopy}>
         <Text style={styles.toggleLabel}>{label}</Text>
         <Text style={styles.toggleHint}>{hint}</Text>
@@ -156,92 +180,77 @@ function ToggleRow({
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  safe: { flex: 1 },
-  header: {
+  safe: { flex: 1, paddingHorizontal: 18, paddingTop: 8 },
+  content: {
+    paddingBottom: 120,
+    alignItems: 'center',
+    gap: 12,
+    paddingTop: 8,
+  },
+  hero: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
   },
-  back: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 15,
-    color: colors.honeyDark,
-    width: 56,
+  bubble: {
+    flex: 1,
+    alignItems: 'flex-start',
+    marginBottom: 20,
   },
-  backSpacer: { width: 56 },
-  headerTitle: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 16,
-    color: colors.text,
-  },
-  content: {
-    paddingHorizontal: 20,
-    paddingBottom: 36,
-    alignItems: 'center',
+  noteSticker: {
+    marginLeft: 4,
   },
   title: {
-    ...typography.title,
-    marginTop: 8,
-    textAlign: 'center',
+    fontFamily: fonts.display,
+    fontSize: 30,
+    color: colors.chocolate,
+    alignSelf: 'flex-start',
+    marginTop: -4,
   },
-  subtitle: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: 6,
-    marginBottom: 18,
-    lineHeight: 20,
-  },
-  card: {
-    width: '100%',
-    backgroundColor: colors.white,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: colors.honey,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
+  toggleCard: {
+    paddingTop: 22,
+    gap: 4,
   },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    gap: 12,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  toggleEmoji: {
+    fontSize: 22,
   },
   toggleCopy: {
     flex: 1,
   },
   toggleLabel: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 16,
-    color: colors.text,
+    fontFamily: fonts.display,
+    fontSize: 18,
+    color: colors.chocolate,
   },
   toggleHint: {
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: fonts.semiBold,
     fontSize: 12,
     color: colors.textMuted,
-    marginTop: 2,
+    marginTop: 1,
   },
   divider: {
-    height: 1,
+    height: 2,
     backgroundColor: colors.honeyLight,
+    borderRadius: 1,
+  },
+  sectionHead: {
+    alignSelf: 'stretch',
+    marginTop: 6,
   },
   sectionLabel: {
-    alignSelf: 'flex-start',
-    marginTop: 22,
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 16,
+    fontFamily: fonts.display,
+    fontSize: 20,
     color: colors.honeyDark,
   },
   sectionHint: {
-    alignSelf: 'flex-start',
-    marginBottom: 10,
-    marginTop: 2,
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 12,
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
     color: colors.textMuted,
   },
   trackList: {
@@ -249,62 +258,40 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   trackCard: {
-    width: '100%',
-    backgroundColor: colors.white,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: colors.honeyLight,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  trackCardSelected: {
-    borderColor: colors.honeyDark,
-    backgroundColor: colors.creamSoft,
-  },
-  trackTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  trackTitle: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 15,
-    color: colors.text,
-    flex: 1,
-  },
-  trackTitleSelected: {
-    color: colors.honeyDark,
-  },
-  playingTag: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 11,
-    color: colors.white,
-    backgroundColor: colors.honey,
-    overflow: 'hidden',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  trackBlurb: {
-    marginTop: 4,
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 12,
-    color: colors.textMuted,
-    lineHeight: 17,
-  },
-  previewBtn: {
-    marginTop: 20,
-    backgroundColor: colors.gold,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: colors.honeyDark,
-    paddingHorizontal: 20,
+    gap: 12,
     paddingVertical: 12,
   },
-  previewText: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 14,
-    color: colors.white,
+  trackEmoji: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: colors.white,
+    borderWidth: 2,
+    borderColor: colors.honeyLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trackEmojiText: {
+    fontSize: 24,
+  },
+  trackCopy: {
+    flex: 1,
+  },
+  trackTitle: {
+    fontFamily: fonts.display,
+    fontSize: 17,
+    color: colors.chocolate,
+  },
+  trackBlurb: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  previewBtn: {
+    marginTop: 6,
   },
 });

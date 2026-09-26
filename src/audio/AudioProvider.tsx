@@ -6,8 +6,8 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { AppState, type AppStateStatus } from 'react-native';
-import { MUSIC_TRACKS, type MusicTrackId, type SfxId } from './catalog';
+import { MUSIC_TRACKS, getMusicTrack, type MusicTrackId, type SfxId } from './catalog';
+import { MusicBed } from './MusicBed';
 import {
   DEFAULT_AUDIO_SETTINGS,
   loadAudioSettings,
@@ -21,6 +21,7 @@ type AudioContextValue = {
   settings: AudioSettings;
   tracks: typeof MUSIC_TRACKS;
   playSfx: (id: SfxId) => void;
+  previewSfx: (id: SfxId) => void;
   setSoundEffectsEnabled: (enabled: boolean) => Promise<void>;
   setMusicEnabled: (enabled: boolean) => Promise<void>;
   setVoiceEnabled: (enabled: boolean) => Promise<void>;
@@ -32,6 +33,7 @@ const AudioContext = createContext<AudioContextValue | null>(null);
 export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [settings, setSettings] = useState<AudioSettings>(DEFAULT_AUDIO_SETTINGS);
+  const [musicNonce, setMusicNonce] = useState(0);
 
   useEffect(() => {
     let alive = true;
@@ -47,31 +49,24 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  useEffect(() => {
-    const onChange = (state: AppStateStatus) => {
-      if (state === 'active') {
-        if (settings.musicEnabled) void soundManager.playMusic(settings.musicTrackId);
-      } else {
-        soundManager.pauseMusic();
-      }
-    };
-    const sub = AppState.addEventListener('change', onChange);
-    return () => sub.remove();
-  }, [settings.musicEnabled, settings.musicTrackId]);
-
   const persist = useCallback(async (next: AudioSettings) => {
     setSettings(next);
     await saveAudioSettings(next);
-    await soundManager.applySettings(next);
+    soundManager.applySettings(next);
   }, []);
 
   const playSfx = useCallback((id: SfxId) => {
     soundManager.playSfx(id);
   }, []);
 
+  const previewSfx = useCallback((id: SfxId) => {
+    soundManager.previewSfx(id);
+  }, []);
+
   const setSoundEffectsEnabled = useCallback(
     async (enabled: boolean) => {
       await persist({ ...settings, soundEffectsEnabled: enabled });
+      if (enabled) soundManager.previewSfx('ding');
     },
     [persist, settings],
   );
@@ -79,6 +74,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const setMusicEnabled = useCallback(
     async (enabled: boolean) => {
       await persist({ ...settings, musicEnabled: enabled });
+      if (enabled) setMusicNonce((n) => n + 1);
     },
     [persist, settings],
   );
@@ -93,6 +89,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const setMusicTrackId = useCallback(
     async (id: MusicTrackId) => {
       await persist({ ...settings, musicTrackId: id, musicEnabled: true });
+      setMusicNonce((n) => n + 1);
     },
     [persist, settings],
   );
@@ -103,6 +100,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       settings,
       tracks: MUSIC_TRACKS,
       playSfx,
+      previewSfx,
       setSoundEffectsEnabled,
       setMusicEnabled,
       setVoiceEnabled,
@@ -112,6 +110,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       ready,
       settings,
       playSfx,
+      previewSfx,
       setSoundEffectsEnabled,
       setMusicEnabled,
       setVoiceEnabled,
@@ -119,7 +118,20 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     ],
   );
 
-  return <AudioContext.Provider value={value}>{children}</AudioContext.Provider>;
+  const musicSource = getMusicTrack(settings.musicTrackId).source;
+
+  return (
+    <AudioContext.Provider value={value}>
+      {ready ? (
+        <MusicBed
+          source={musicSource}
+          enabled={settings.musicEnabled}
+          restartKey={musicNonce}
+        />
+      ) : null}
+      {children}
+    </AudioContext.Provider>
+  );
 }
 
 export function useAudio(): AudioContextValue {

@@ -23,8 +23,8 @@ export function LetterSlots({ length, letters, feedback = 'idle' }: LetterSlotsP
     }
     if (feedback === 'correct') {
       Animated.sequence([
-        Animated.timing(flash, { toValue: 1, duration: 180, useNativeDriver: true }),
-        Animated.timing(flash, { toValue: 0, duration: 280, useNativeDriver: true }),
+        Animated.timing(flash, { toValue: 1, duration: 160, useNativeDriver: true }),
+        Animated.spring(flash, { toValue: 0, friction: 4, useNativeDriver: true }),
       ]).start();
     }
   }, [feedback, shake, flash]);
@@ -33,18 +33,19 @@ export function LetterSlots({ length, letters, feedback = 'idle' }: LetterSlotsP
     inputRange: [-1, 1],
     outputRange: [-8, 8],
   });
+  const scale = flash.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] });
 
   const slots = Array.from({ length }, (_, i) => {
     const letter = letters[i];
     let state: 'empty' | 'filled' | 'correct' | 'incorrect' = letter ? 'filled' : 'empty';
     if (feedback === 'correct' && letter) state = 'correct';
     if (feedback === 'incorrect' && letter) state = 'incorrect';
-    return <HexLetter key={i} letter={letter} state={state} size={48} />;
+    return <HexLetter key={i} letter={letter} state={state} size={50} />;
   });
 
   return (
     <Animated.View style={[styles.row, { transform: [{ translateX }] }]}>
-      <Animated.View style={{ opacity: flash.interpolate({ inputRange: [0, 1], outputRange: [1, 0.75] }) }}>
+      <Animated.View style={{ transform: [{ scale }] }}>
         <View style={styles.inner}>{slots}</View>
       </Animated.View>
     </Animated.View>

@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Hexagon } from './Hexagon';
 import { AlphaBee } from './AlphaBee';
-import { HiveStructure } from './HiveDecor';
-import { colors, typography } from '../theme';
+import { Beehive } from './HiveDecor';
+import { KidCard, Pill, SpeechBubble, Sticker, toneColors, type KidTone } from './KidUI';
+import { colors, fonts, typography } from '../theme';
 import type { GradeLevel } from '../data/words';
 import {
   GRADE_LEVELS,
@@ -23,7 +25,11 @@ type ModeSwitcherProps = {
   onGradeChange: (grade: GradeLevel) => void;
   onUnitChange: (unitId: string) => void;
   onOpenPractice: () => void;
+  learnerName?: string;
 };
+
+const GRADE_TONES: KidTone[] = ['coral', 'honey', 'leaf', 'sky', 'berry', 'honey'];
+const UNIT_TONES: KidTone[] = ['honey', 'leaf', 'sky', 'coral', 'berry'];
 
 export function ModeSwitcher({
   mode,
@@ -33,6 +39,7 @@ export function ModeSwitcher({
   onGradeChange,
   onUnitChange,
   onOpenPractice,
+  learnerName,
 }: ModeSwitcherProps) {
   const units = useMemo(() => getUnitsForGrade(grade), [grade]);
   const activeUnit = getUnitById(unitId) ?? units[0];
@@ -46,141 +53,200 @@ export function ModeSwitcher({
 
   return (
     <View style={styles.wrap}>
+      {/* Hero */}
       <View style={styles.hero}>
-        <View style={styles.heroDecorLeft} pointerEvents="none">
-          <HiveStructure size={72} />
+        <View style={styles.heroBee}>
+          <AlphaBee size={104} mood="happy" />
         </View>
-        <View style={styles.heroCenter}>
-          <AlphaBee size={58} happy />
-          <Text style={styles.brand}>AlphaBee</Text>
-          <Text style={typography.title}>Choose Your Hive</Text>
-          <Text style={[typography.subtitle, styles.sub]}>
-            Pick how you want to buzz through spelling today
-          </Text>
-        </View>
-        <View style={styles.heroDecorRight} pointerEvents="none">
-          <Hexagon size={36} fill={colors.goldBright} fillEnd={colors.gold} stroke={colors.honeyDark} />
-          <Hexagon
-            size={28}
-            fill={colors.honeyLight}
-            fillEnd={colors.honey}
-            stroke={colors.honeyDark}
-            style={styles.hexOffset}
+        <View style={styles.heroText}>
+          <SpeechBubble
+            text={learnerName ? `Hi ${learnerName}! Where should we buzz today?` : 'Where should we buzz today?'}
+            tail="left"
+            style={styles.heroBubble}
           />
+          <Text style={styles.heroTitle}>Choose Your Hive</Text>
+        </View>
+        <View style={styles.heroHive} pointerEvents="none">
+          <Beehive size={64} branch={false} />
         </View>
       </View>
 
-      <View style={styles.howItWorks}>
-        <Text style={styles.sectionLabel}>How spelling works</Text>
+      {/* How it works */}
+      <KidCard tone="sky" contentStyle={styles.howCard}>
+        <View style={styles.cardHeader}>
+          <Ionicons name="sparkles" size={16} color={colors.skyNight} />
+          <Text style={[typography.eyebrow, { color: colors.skyNight }]}>How spelling works</Text>
+        </View>
         <View style={styles.stepsRow}>
           <View style={styles.step}>
-            <View style={styles.stepBadge}>
-              <Text style={styles.stepNum}>1</Text>
+            <View style={[styles.stepBadge, { backgroundColor: colors.gold }]}>
+              <Ionicons name="eye" size={22} color={colors.white} />
+              <View style={styles.stepNum}>
+                <Text style={styles.stepNumText}>1</Text>
+              </View>
             </View>
             <Text style={styles.stepTitle}>Look</Text>
-            <Text style={styles.stepDesc}>See the word and spell it once</Text>
+            <Text style={styles.stepDesc}>See the word, then spell it</Text>
           </View>
-          <View style={styles.stepConnector} />
+          <View style={styles.stepArrow}>
+            <Ionicons name="arrow-forward" size={20} color={colors.skyDeep} />
+          </View>
           <View style={styles.step}>
-            <View style={[styles.stepBadge, styles.stepBadgeAlt]}>
-              <Text style={styles.stepNum}>2</Text>
+            <View style={[styles.stepBadge, { backgroundColor: colors.coral }]}>
+              <Ionicons name="ear" size={22} color={colors.white} />
+              <View style={styles.stepNum}>
+                <Text style={styles.stepNumText}>2</Text>
+              </View>
             </View>
             <Text style={styles.stepTitle}>Listen</Text>
-            <Text style={styles.stepDesc}>Hear the same word and spell from memory</Text>
+            <Text style={styles.stepDesc}>Hear it and spell from memory</Text>
+          </View>
+          <View style={styles.stepArrow}>
+            <Ionicons name="arrow-forward" size={20} color={colors.skyDeep} />
+          </View>
+          <View style={styles.step}>
+            <View style={[styles.stepBadge, { backgroundColor: colors.leaf }]}>
+              <Text style={styles.stepEmoji}>🍯</Text>
+              <View style={styles.stepNum}>
+                <Text style={styles.stepNumText}>3</Text>
+              </View>
+            </View>
+            <Text style={styles.stepTitle}>Earn</Text>
+            <Text style={styles.stepDesc}>Fill your hive with honey</Text>
           </View>
         </View>
+      </KidCard>
+
+      {/* Game modes */}
+      <View style={styles.sectionHeader}>
+        <Ionicons name="game-controller" size={16} color={colors.honeyDark} />
+        <Text style={typography.eyebrow}>Game modes</Text>
       </View>
-
-      <Text style={styles.sectionLabel}>Game modes</Text>
       <View style={styles.modeRow}>
-        <Pressable
+        <KidCard
+          tone="honey"
+          tinted={mode === 'quest'}
+          selected={mode === 'quest'}
           onPress={() => onModeChange('quest')}
-          style={[styles.modeCard, mode === 'quest' && styles.modeCardActive]}
+          style={styles.modeCardWrap}
+          contentStyle={styles.modeCard}
         >
-          <Hexagon size={58} fill={colors.goldBright} fillEnd={colors.gold} stroke={colors.honeyDark}>
-            <Text style={styles.modeIcon}>Q</Text>
-          </Hexagon>
-          <Text style={styles.modeTitle}>Grade Quest</Text>
-          <Text style={styles.modeDesc}>Phonics path with sight words & patterns</Text>
-          <View style={styles.bulletList}>
-            <Text style={styles.bullet}>• Sequenced K–5 curriculum</Text>
-            <Text style={styles.bullet}>• CVC, blends, silent e & more</Text>
-            <Text style={styles.bullet}>• Units unlock in order as you play</Text>
+          {mode === 'quest' ? <Sticker label="✓" tone="leaf" size={30} rotate={10} style={styles.modeCheck} /> : null}
+          <View style={styles.modeIconWrap}>
+            <Hexagon size={68} fill={colors.goldBright} fillEnd={colors.honey} stroke={colors.honeyDark} strokeWidth={2.5} rounded>
+              <Text style={styles.modeEmoji}>🗺️</Text>
+            </Hexagon>
           </View>
-          {mode === 'quest' ? <Text style={styles.selectedTag}>Selected</Text> : null}
-        </Pressable>
+          <Text style={styles.modeTitle}>Grade Quest</Text>
+          <Text style={styles.modeDesc}>Follow the phonics path from K to 5th grade</Text>
+          <View style={styles.modeTags}>
+            <Pill label="Sight words" tone="honey" />
+            <Pill label="Patterns" tone="leaf" />
+          </View>
+        </KidCard>
 
-        <Pressable
+        <KidCard
+          tone="berry"
+          tinted={mode === 'practice'}
+          selected={mode === 'practice'}
           onPress={() => {
             onModeChange('practice');
             onOpenPractice();
           }}
-          style={[styles.modeCard, mode === 'practice' && styles.modeCardActive]}
+          style={styles.modeCardWrap}
+          contentStyle={styles.modeCard}
         >
-          <Hexagon size={58} fill={colors.honeyLight} fillEnd={colors.honey} stroke={colors.honeyDark}>
-            <Text style={styles.modeIcon}>P</Text>
-          </Hexagon>
-          <Text style={styles.modeTitle}>Practice Hive</Text>
-          <Text style={styles.modeDesc}>Parents & teachers add custom vocabulary</Text>
-          <View style={styles.bulletList}>
-            <Text style={styles.bullet}>• Weekly spelling lists</Text>
-            <Text style={styles.bullet}>• Type words in a quick modal</Text>
-            <Text style={styles.bullet}>• Same fun game mechanics</Text>
+          {mode === 'practice' ? <Sticker label="✓" tone="leaf" size={30} rotate={10} style={styles.modeCheck} /> : null}
+          <View style={styles.modeIconWrap}>
+            <Hexagon size={68} fill={colors.berryLight} fillEnd={colors.berry} stroke={colors.berryDark} strokeWidth={2.5} rounded>
+              <Text style={styles.modeEmoji}>✏️</Text>
+            </Hexagon>
           </View>
-          <Text style={styles.openTag}>Tap to open</Text>
-        </Pressable>
+          <Text style={styles.modeTitle}>Practice Hive</Text>
+          <Text style={styles.modeDesc}>Grown-ups add this week’s spelling list</Text>
+          <View style={styles.modeTags}>
+            <Pill label="Custom words" tone="berry" />
+            <Pill label="Tap to open" tone="cream" />
+          </View>
+        </KidCard>
       </View>
 
       {mode === 'quest' ? (
-        <View style={styles.gradesPanel}>
-          <View style={styles.gradesHeader}>
-            <Text style={styles.sectionLabel}>Pick a grade badge</Text>
-            <Text style={styles.gradeActiveLabel}>{gradeLabel(grade)}</Text>
+        <KidCard tone="leaf" contentStyle={styles.gradesCard}>
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="school" size={16} color={colors.leafDark} />
+              <Text style={[typography.eyebrow, { color: colors.leafDark }]}>Pick your grade badge</Text>
+            </View>
+            <Pill label={gradeLabel(grade)} tone="leaf" solid />
           </View>
-          <Text style={styles.gradeBlurb}>{GRADE_CURRICULUM_BLURBS[grade]}</Text>
 
           <View style={styles.badgeRow}>
-            {GRADE_LEVELS.map((g) => {
+            {GRADE_LEVELS.map((g, i) => {
               const active = g === grade;
+              const tone = GRADE_TONES[i % GRADE_TONES.length];
+              const t = toneColors(tone);
               return (
                 <Pressable
                   key={g}
                   onPress={() => onGradeChange(g)}
-                  style={[styles.badge, active && styles.badgeActive]}
+                  style={({ pressed }) => [styles.badgePress, pressed && styles.pressed, active && styles.badgeActive]}
                   accessibilityLabel={gradeLabel(g)}
+                  accessibilityState={{ selected: active }}
                 >
-                  <Text style={[styles.badgeText, active && styles.badgeTextActive]}>
-                    {g === 'K' ? 'K' : g}
-                  </Text>
+                  <Hexagon
+                    size={active ? 60 : 52}
+                    fill={active ? t.border : colors.white}
+                    fillEnd={active ? t.edge : t.tint}
+                    stroke={t.edge}
+                    strokeWidth={active ? 3 : 2}
+                    rounded
+                  >
+                    <Text style={[styles.badgeText, { color: active ? colors.white : t.text }]}>{g}</Text>
+                  </Hexagon>
                 </Pressable>
               );
             })}
           </View>
+          <Text style={styles.gradeBlurb}>{GRADE_CURRICULUM_BLURBS[grade]}</Text>
 
-          <Text style={[styles.sectionLabel, styles.pathLabel]}>Phonics path</Text>
-          <Text style={styles.pathHint}>Start on a pattern — play advances through the sequence</Text>
+          <View style={styles.pathHeader}>
+            <Ionicons name="footsteps" size={16} color={colors.leafDark} />
+            <Text style={[typography.eyebrow, { color: colors.leafDark }]}>Phonics path</Text>
+          </View>
+          <Text style={styles.pathHint}>Start on a pattern — playing moves you along the trail</Text>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.unitRow}
-          >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.unitRow}>
             {units.map((unit, index) => {
               const active = unit.id === activeUnit?.id;
+              const t = toneColors(UNIT_TONES[index % UNIT_TONES.length]);
               return (
                 <Pressable
                   key={unit.id}
                   onPress={() => onUnitChange(unit.id)}
-                  style={[styles.unitChip, active && styles.unitChipActive]}
+                  style={({ pressed }) => [
+                    styles.unitChip,
+                    { borderColor: t.border, borderBottomColor: t.edge, backgroundColor: active ? t.tint : colors.white },
+                    active && styles.unitChipActive,
+                    pressed && styles.pressed,
+                  ]}
                   accessibilityLabel={unit.title}
                 >
-                  <Text style={[styles.unitOrder, active && styles.unitOrderActive]}>{index + 1}</Text>
-                  <Text style={[styles.unitChipTitle, active && styles.unitChipTitleActive]} numberOfLines={2}>
+                  <View style={[styles.unitOrder, { backgroundColor: t.edge }]}>
+                    <Text style={styles.unitOrderText}>{index + 1}</Text>
+                  </View>
+                  <Text style={styles.unitChipTitle} numberOfLines={2}>
                     {unit.title}
                   </Text>
-                  <Text style={[styles.unitChipFocus, active && styles.unitChipFocusActive]}>
+                  <Text style={[styles.unitChipFocus, { color: t.text }]} numberOfLines={1}>
                     {unit.focusLabel}
                   </Text>
+                  {active ? (
+                    <View style={[styles.unitActiveTag, { backgroundColor: t.edge }]}>
+                      <Ionicons name="play" size={10} color={colors.white} />
+                      <Text style={styles.unitActiveTagText}>Up next</Text>
+                    </View>
+                  ) : null}
                 </Pressable>
               );
             })}
@@ -188,27 +254,26 @@ export function ModeSwitcher({
 
           {activeUnit ? (
             <View style={styles.unitDetail}>
-              <Text style={styles.unitDetailTitle}>{activeUnit.title}</Text>
+              <View style={styles.unitDetailHead}>
+                <Text style={styles.unitDetailTitle}>{activeUnit.title}</Text>
+                <Text style={styles.unitDetailEmoji}>🔍</Text>
+              </View>
               <Text style={styles.unitDetailDesc}>{activeUnit.description}</Text>
-              <Text style={styles.sampleLabel}>Sample words in this unit</Text>
+              <Text style={styles.sampleLabel}>Words you’ll meet</Text>
               <View style={styles.sampleChips}>
-                {sampleWords.map((word) => (
-                  <View key={word} style={styles.sampleChip}>
-                    <Text style={styles.sampleChipText}>{word}</Text>
-                  </View>
-                ))}
+                {sampleWords.map((word, i) => {
+                  const t = toneColors(UNIT_TONES[(i + 1) % UNIT_TONES.length]);
+                  return (
+                    <View key={word} style={[styles.sampleChip, { borderColor: t.border, backgroundColor: t.tint }]}>
+                      <Text style={[styles.sampleChipText, { color: t.text }]}>{word}</Text>
+                    </View>
+                  );
+                })}
               </View>
             </View>
           ) : null}
-        </View>
+        </KidCard>
       ) : null}
-
-      <View style={styles.footerNote}>
-        <Hexagon size={22} fill={colors.gold} fillEnd={colors.honey} stroke={colors.honeyDark} strokeWidth={1.5} />
-        <Text style={styles.footerNoteText}>
-          Correct spells fill your hive with honey drops and stars
-        </Text>
-      </View>
     </View>
   );
 }
@@ -217,57 +282,52 @@ const styles = StyleSheet.create({
   wrap: {
     width: '100%',
     alignItems: 'center',
-    gap: 14,
+    gap: 16,
   },
   hero: {
     width: '100%',
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  heroDecorLeft: {
-    opacity: 0.85,
-    marginTop: 8,
-  },
-  heroDecorRight: {
     alignItems: 'center',
-    gap: 6,
-    marginTop: 12,
+    gap: 4,
+    marginBottom: 2,
   },
-  hexOffset: {
-    marginLeft: 12,
+  heroBee: {
+    marginLeft: -8,
   },
-  heroCenter: {
+  heroText: {
     flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 4,
+    alignItems: 'flex-start',
   },
-  brand: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 14,
-    color: colors.honeyDark,
-    letterSpacing: 0.5,
-    marginTop: 2,
+  heroBubble: {
+    alignItems: 'flex-start',
   },
-  sub: {
-    textAlign: 'center',
+  heroTitle: {
+    ...typography.title,
+    fontSize: 26,
     marginTop: 4,
   },
-  sectionLabel: {
-    ...typography.label,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    alignSelf: 'flex-start',
-    color: colors.honeyDark,
+  heroHive: {
+    marginTop: -10,
   },
-  howItWorks: {
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sectionHeader: {
     width: '100%',
-    backgroundColor: colors.white,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: colors.honeyLight,
-    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: -6,
+    paddingLeft: 4,
+  },
+  howCard: {
     gap: 12,
   },
   stepsRow: {
@@ -280,248 +340,234 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   stepBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 12,
-    backgroundColor: colors.gold,
-    borderWidth: 2,
-    borderColor: colors.honeyDark,
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    borderWidth: 2.5,
+    borderColor: colors.chocolate,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  stepEmoji: {
+    fontSize: 22,
+  },
+  stepNum: {
+    position: 'absolute',
+    top: -8,
+    left: -8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.chocolate,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepBadgeAlt: {
-    backgroundColor: colors.honey,
-  },
-  stepNum: {
-    fontFamily: 'Nunito_900Black',
-    fontSize: 14,
+  stepNumText: {
+    fontFamily: fonts.display,
+    fontSize: 12,
     color: colors.white,
   },
   stepTitle: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 15,
-    color: colors.text,
+    fontFamily: fonts.display,
+    fontSize: 16,
+    color: colors.chocolate,
   },
   stepDesc: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 12,
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
     color: colors.textMuted,
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 15,
   },
-  stepConnector: {
-    width: 18,
-    height: 3,
-    backgroundColor: colors.honeyLight,
-    borderRadius: 2,
-    marginTop: 14,
+  stepArrow: {
+    marginTop: 16,
   },
   modeRow: {
     flexDirection: 'row',
     gap: 12,
     width: '100%',
   },
-  modeCard: {
+  modeCardWrap: {
     flex: 1,
+    width: undefined,
+  },
+  modeCard: {
     alignItems: 'center',
-    backgroundColor: colors.white,
-    borderRadius: 22,
     paddingVertical: 16,
     paddingHorizontal: 10,
-    borderWidth: 2,
-    borderColor: colors.honeyLight,
     gap: 6,
+    minHeight: 220,
   },
-  modeCardActive: {
-    borderColor: colors.honeyDark,
-    backgroundColor: colors.creamSoft,
+  modeCheck: {
+    position: 'absolute',
+    top: -10,
+    right: -8,
+    zIndex: 2,
   },
-  modeIcon: {
-    fontFamily: 'Nunito_900Black',
-    fontSize: 20,
-    color: colors.honeyDark,
+  modeIconWrap: {
+    marginBottom: 2,
+  },
+  modeEmoji: {
+    fontSize: 28,
   },
   modeTitle: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 15,
-    color: colors.text,
+    fontFamily: fonts.display,
+    fontSize: 17,
+    color: colors.chocolate,
     textAlign: 'center',
   },
   modeDesc: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 11,
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
     color: colors.textMuted,
     textAlign: 'center',
-    lineHeight: 15,
-    marginBottom: 2,
+    lineHeight: 16,
   },
-  bulletList: {
-    width: '100%',
+  modeTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: 4,
     marginTop: 4,
   },
-  bullet: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 11,
-    color: colors.brown,
-    textAlign: 'left',
-    paddingLeft: 4,
-  },
-  selectedTag: {
-    marginTop: 6,
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 11,
-    color: colors.honeyDark,
-    backgroundColor: colors.goldBright,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  openTag: {
-    marginTop: 6,
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 11,
-    color: colors.honeyDark,
-  },
-  gradesPanel: {
-    width: '100%',
-    backgroundColor: colors.white,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: colors.honey,
-    padding: 14,
+  gradesCard: {
     gap: 10,
-  },
-  gradesHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  gradeActiveLabel: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 13,
-    color: colors.white,
-    backgroundColor: colors.honeyDark,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  gradeBlurb: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 13,
-    color: colors.textMuted,
-    alignSelf: 'flex-start',
   },
   badgeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 8,
+    alignItems: 'center',
+    gap: 6,
     width: '100%',
+    minHeight: 64,
   },
-  badge: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
+  badgePress: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.creamSoft,
-    borderWidth: 2,
-    borderColor: colors.honeyLight,
   },
   badgeActive: {
-    backgroundColor: colors.gold,
-    borderColor: colors.honeyDark,
+    transform: [{ translateY: -3 }],
+  },
+  pressed: {
+    transform: [{ translateY: 2 }],
+    opacity: 0.95,
   },
   badgeText: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 16,
-    color: colors.honeyDark,
+    fontFamily: fonts.display,
+    fontSize: 20,
   },
-  badgeTextActive: {
-    color: colors.white,
+  gradeBlurb: {
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 18,
   },
-  pathLabel: {
-    marginTop: 6,
+  pathHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
   },
   pathHint: {
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: fonts.semiBold,
     fontSize: 12,
     color: colors.textMuted,
-    alignSelf: 'flex-start',
-    marginTop: -4,
+    marginTop: -6,
   },
   unitRow: {
     gap: 10,
-    paddingVertical: 4,
+    paddingVertical: 6,
     paddingRight: 8,
+    paddingLeft: 2,
   },
   unitChip: {
-    width: 132,
-    backgroundColor: colors.creamSoft,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: colors.honeyLight,
+    width: 136,
+    borderRadius: 18,
+    borderWidth: 2.5,
+    borderBottomWidth: 5,
     padding: 10,
     gap: 4,
   },
   unitChipActive: {
-    backgroundColor: colors.goldBright,
-    borderColor: colors.honeyDark,
+    transform: [{ translateY: -2 }],
   },
   unitOrder: {
-    fontFamily: 'Nunito_900Black',
-    fontSize: 12,
-    color: colors.honey,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  unitOrderActive: {
-    color: colors.honeyDark,
+  unitOrderText: {
+    fontFamily: fonts.display,
+    fontSize: 13,
+    color: colors.white,
   },
   unitChipTitle: {
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: fonts.extraBold,
     fontSize: 12,
-    color: colors.text,
+    color: colors.chocolate,
     minHeight: 32,
   },
-  unitChipTitleActive: {
-    color: colors.text,
-  },
   unitChipFocus: {
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: fonts.bold,
     fontSize: 10,
-    color: colors.textMuted,
   },
-  unitChipFocusActive: {
-    color: colors.brown,
+  unitActiveTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    alignSelf: 'flex-start',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginTop: 2,
+  },
+  unitActiveTagText: {
+    fontFamily: fonts.extraBold,
+    fontSize: 9,
+    color: colors.white,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   unitDetail: {
     width: '100%',
-    backgroundColor: colors.creamSoft,
-    borderRadius: 16,
+    backgroundColor: colors.leafLight,
+    borderRadius: 18,
     padding: 12,
     gap: 6,
-    borderWidth: 1.5,
-    borderColor: colors.honeyLight,
+    borderWidth: 2,
+    borderColor: colors.leaf,
+  },
+  unitDetailHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   unitDetailTitle: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 14,
-    color: colors.honeyDark,
+    fontFamily: fonts.display,
+    fontSize: 16,
+    color: colors.leafDark,
+  },
+  unitDetailEmoji: {
+    fontSize: 16,
   },
   unitDetailDesc: {
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: fonts.semiBold,
     fontSize: 12,
-    color: colors.textMuted,
+    color: colors.text,
     lineHeight: 17,
     marginBottom: 4,
   },
   sampleLabel: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 12,
-    color: colors.textMuted,
+    fontFamily: fonts.extraBold,
+    fontSize: 11,
+    color: colors.leafDark,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   sampleChips: {
     flexDirection: 'row',
@@ -529,31 +575,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   sampleChip: {
-    backgroundColor: colors.white,
     borderRadius: 12,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderWidth: 1.5,
-    borderColor: colors.honey,
+    borderWidth: 2,
   },
   sampleChipText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 13,
-    color: colors.text,
-  },
-  footerNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    width: '100%',
-    paddingHorizontal: 4,
-    marginTop: 2,
-  },
-  footerNoteText: {
-    flex: 1,
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 13,
-    color: colors.textMuted,
-    lineHeight: 18,
+    fontFamily: fonts.extraBold,
+    fontSize: 14,
   },
 });

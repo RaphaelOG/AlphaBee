@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 import type { WordCue } from '../data/wordCues';
 
 type WordMeaningCueProps = {
@@ -13,8 +13,12 @@ type WordMeaningCueProps = {
 export function WordMeaningCue({ cue, emphasizePicture = true }: WordMeaningCueProps) {
   return (
     <View style={styles.wrap} accessible accessibilityLabel={cue.meaning}>
-      <View style={[styles.picturePlate, emphasizePicture && styles.picturePlateLarge]}>
-        <Text style={[styles.picture, emphasizePicture && styles.pictureLarge]}>{cue.picture}</Text>
+      <View style={styles.frame}>
+        <View style={styles.petal} />
+        <View style={[styles.petal, styles.petal2]} />
+        <View style={[styles.picturePlate, emphasizePicture && styles.picturePlateLarge]}>
+          <Text style={[styles.picture, emphasizePicture && styles.pictureLarge]}>{cue.picture}</Text>
+        </View>
       </View>
       <View style={styles.meaningBlock}>
         <Text style={styles.meaningLabel}>What it means</Text>
@@ -30,27 +34,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  picturePlate: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
-    backgroundColor: colors.white,
-    borderWidth: 2,
-    borderColor: colors.honey,
+  frame: {
     alignItems: 'center',
     justifyContent: 'center',
   },
+  petal: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.goldBright,
+    borderWidth: 2,
+    borderColor: colors.honey,
+    top: -6,
+    left: -8,
+    opacity: 0.85,
+  },
+  petal2: {
+    top: -4,
+    left: undefined,
+    right: -8,
+    backgroundColor: colors.sunny,
+  },
+  picturePlate: {
+    width: 76,
+    height: 76,
+    borderRadius: 22,
+    backgroundColor: colors.white,
+    borderWidth: 3,
+    borderColor: colors.honey,
+    borderBottomWidth: 6,
+    borderBottomColor: colors.honeyDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+    transform: [{ rotate: '-3deg' }],
+  },
   picturePlateLarge: {
-    width: 88,
-    height: 88,
-    borderRadius: 24,
+    width: 96,
+    height: 96,
+    borderRadius: 26,
   },
   picture: {
     fontSize: 38,
     textAlign: 'center',
   },
   pictureLarge: {
-    fontSize: 48,
+    fontSize: 52,
   },
   meaningBlock: {
     width: '100%',
@@ -58,7 +87,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   meaningLabel: {
-    fontFamily: 'Nunito_700Bold',
+    fontFamily: fonts.extraBold,
     fontSize: 10,
     color: colors.honeyDark,
     textTransform: 'uppercase',
@@ -66,9 +95,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   meaning: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 13,
-    color: colors.textMuted,
+    fontFamily: fonts.extraBold,
+    fontSize: 14,
+    color: colors.text,
     textAlign: 'center',
     lineHeight: 18,
     paddingHorizontal: 4,

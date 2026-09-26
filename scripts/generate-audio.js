@@ -1,11 +1,12 @@
 /**
- * Generate original AlphaBee SFX + looping music as 16-bit mono WAV files.
+ * Generate original AlphaBee SFX + looping music as WAV, then AAC M4A for iOS.
  * Run: node scripts/generate-audio.js
  */
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const SAMPLE_RATE = 22050;
+const SAMPLE_RATE = 44100;
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -67,19 +68,23 @@ function tone(freq, duration, { type = 'sine', volume = 0.35, attack = 0.01, rel
   return out;
 }
 
+function normalize(samples, target = 0.88) {
+  let peak = 0;
+  for (let i = 0; i < samples.length; i++) peak = Math.max(peak, Math.abs(samples[i]));
+  if (peak < 1e-6) return samples;
+  const scale = target / peak;
+  const out = new Float64Array(samples.length);
+  for (let i = 0; i < samples.length; i++) out[i] = samples[i] * scale;
+  return out;
+}
+
 function mix(...parts) {
   const len = Math.max(...parts.map((p) => p.length));
   const out = new Float64Array(len);
   for (const part of parts) {
     for (let i = 0; i < part.length; i++) out[i] += part[i];
   }
-  let peak = 0;
-  for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(out[i]));
-  if (peak > 0.95) {
-    const scale = 0.92 / peak;
-    for (let i = 0; i < len; i++) out[i] *= scale;
-  }
-  return out;
+  return normalize(out);
 }
 
 function concat(parts, gapSec = 0) {
@@ -108,8 +113,8 @@ function place(base, clip, atSec) {
 // --- SFX ---
 function makeDing() {
   return mix(
-    tone(880, 0.18, { volume: 0.32, attack: 0.005, release: 0.12 }),
-    tone(1320, 0.28, { volume: 0.22, attack: 0.01, release: 0.2, type: 'triangle' }),
+    tone(880, 0.18, { volume: 0.55, attack: 0.005, release: 0.12 }),
+    tone(1320, 0.28, { volume: 0.4, attack: 0.01, release: 0.2, type: 'triangle' }),
   );
 }
 
@@ -119,8 +124,8 @@ function makeBuzz() {
   for (let i = 0; i < n; i++) {
     const t = i / SAMPLE_RATE;
     const wobble = 180 + Math.sin(t * 40) * 35;
-    const buzz = Math.sin(2 * Math.PI * wobble * t) * 0.22;
-    const rasp = Math.sin(2 * Math.PI * (wobble * 2.1) * t) * 0.08;
+    const buzz = Math.sin(2 * Math.PI * wobble * t) * 0.42;
+    const rasp = Math.sin(2 * Math.PI * (wobble * 2.1) * t) * 0.16;
     out[i] = (buzz + rasp) * env(0.01, 0.18, 0.12, t, 0.32);
   }
   return out;
@@ -129,9 +134,9 @@ function makeBuzz() {
 function makeHive() {
   return concat(
     [
-      tone(523.25, 0.12, { volume: 0.22, type: 'triangle' }),
-      tone(659.25, 0.12, { volume: 0.24, type: 'triangle' }),
-      tone(783.99, 0.22, { volume: 0.28, type: 'triangle', release: 0.14 }),
+      tone(523.25, 0.12, { volume: 0.4, type: 'triangle' }),
+      tone(659.25, 0.12, { volume: 0.44, type: 'triangle' }),
+      tone(783.99, 0.22, { volume: 0.5, type: 'triangle', release: 0.14 }),
     ],
     0.02,
   );
@@ -139,8 +144,8 @@ function makeHive() {
 
 function makeTap() {
   return mix(
-    tone(640, 0.045, { volume: 0.16, attack: 0.002, release: 0.035, type: 'triangle' }),
-    tone(980, 0.03, { volume: 0.08, attack: 0.001, release: 0.025 }),
+    tone(640, 0.045, { volume: 0.38, attack: 0.002, release: 0.035, type: 'triangle' }),
+    tone(980, 0.03, { volume: 0.2, attack: 0.001, release: 0.025 }),
   );
 }
 
@@ -150,8 +155,8 @@ function makeWhoosh() {
   for (let i = 0; i < n; i++) {
     const t = i / SAMPLE_RATE;
     const f = 420 + t * 520;
-    const noise = (Math.random() * 2 - 1) * 0.12;
-    const air = Math.sin(2 * Math.PI * f * t) * 0.1;
+    const noise = (Math.random() * 2 - 1) * 0.28;
+    const air = Math.sin(2 * Math.PI * f * t) * 0.22;
     out[i] = (noise + air) * env(0.02, 0.12, 0.2, t, 0.35);
   }
   return out;
@@ -162,7 +167,7 @@ function makeComplete() {
   let out = new Float64Array(0);
   notes.forEach((freq, i) => {
     const note = tone(freq, i === notes.length - 1 ? 0.45 : 0.16, {
-      volume: 0.24,
+      volume: 0.42,
       type: 'triangle',
       attack: 0.01,
       release: i === notes.length - 1 ? 0.28 : 0.08,
@@ -187,7 +192,7 @@ const C_MAJOR = {
   G5: 783.99,
 };
 
-function softPad(freqs, duration, volume = 0.05) {
+function softPad(freqs, duration, volume = 0.12) {
   return mix(
     ...freqs.map((f, i) =>
       tone(f, duration, {
@@ -200,7 +205,7 @@ function softPad(freqs, duration, volume = 0.05) {
   );
 }
 
-function melodyLine(notes, beat = 0.42, volume = 0.14) {
+function melodyLine(notes, beat = 0.42, volume = 0.28) {
   let out = new Float64Array(0);
   let t = 0;
   for (const step of notes) {
@@ -225,7 +230,7 @@ function melodyLine(notes, beat = 0.42, volume = 0.14) {
 }
 
 function makeSunnyHive() {
-  const pad = softPad([C_MAJOR.C4, C_MAJOR.E4, C_MAJOR.G4], 16.8, 0.045);
+  const pad = softPad([C_MAJOR.C4, C_MAJOR.E4, C_MAJOR.G4], 16.8, 0.12);
   const melody = melodyLine(
     [
       { freq: C_MAJOR.E4, beats: 1 },
@@ -255,14 +260,14 @@ function makeSunnyHive() {
       { freq: C_MAJOR.C4, beats: 4 },
     ],
     0.42,
-    0.13,
+    0.28,
   );
   return mix(pad, melody);
 }
 
 function makeHoneyHum() {
-  const pad = softPad([C_MAJOR.F4, C_MAJOR.A4, C_MAJOR.C5], 18.9, 0.04);
-  const hum = tone(C_MAJOR.C4, 18.9, { volume: 0.035, type: 'sine', attack: 0.8, release: 0.8 });
+  const pad = softPad([C_MAJOR.F4, C_MAJOR.A4, C_MAJOR.C5], 18.9, 0.11);
+  const hum = tone(C_MAJOR.C4, 18.9, { volume: 0.08, type: 'sine', attack: 0.8, release: 0.8 });
   const melody = melodyLine(
     [
       { freq: C_MAJOR.A4, beats: 2 },
@@ -284,13 +289,13 @@ function makeHoneyHum() {
       { freq: C_MAJOR.F4, beats: 4 },
     ],
     0.45,
-    0.11,
+    0.26,
   );
   return mix(pad, hum, melody);
 }
 
 function makeGardenBuzz() {
-  const pad = softPad([C_MAJOR.G4, C_MAJOR.B4, C_MAJOR.D5], 15.12, 0.038);
+  const pad = softPad([C_MAJOR.G4, C_MAJOR.B4, C_MAJOR.D5], 15.12, 0.1);
   const melody = melodyLine(
     [
       { freq: C_MAJOR.G4, beats: 0.5 },
@@ -315,13 +320,13 @@ function makeGardenBuzz() {
       { freq: C_MAJOR.G4, beats: 4 },
     ],
     0.36,
-    0.125,
+    0.28,
   );
   return mix(pad, melody);
 }
 
 function makeGoldenMorning() {
-  const pad = softPad([C_MAJOR.D4, C_MAJOR.F4, C_MAJOR.A4], 20.16, 0.042);
+  const pad = softPad([C_MAJOR.D4, C_MAJOR.F4, C_MAJOR.A4], 20.16, 0.11);
   const sparkle = melodyLine(
     [
       { freq: C_MAJOR.A4, beats: 1 },
@@ -347,13 +352,13 @@ function makeGoldenMorning() {
       { freq: C_MAJOR.F4, beats: 4 },
     ],
     0.48,
-    0.12,
+    0.26,
   );
   return mix(pad, sparkle);
 }
 
 function makeBeeDance() {
-  const pad = softPad([C_MAJOR.C4, C_MAJOR.G4], 14.4, 0.035);
+  const pad = softPad([C_MAJOR.C4, C_MAJOR.G4], 14.4, 0.1);
   const melody = melodyLine(
     [
       { freq: C_MAJOR.C5, beats: 0.5 },
@@ -376,7 +381,7 @@ function makeBeeDance() {
       { freq: C_MAJOR.C5, beats: 4 },
     ],
     0.4,
-    0.13,
+    0.3,
   );
   return mix(pad, melody);
 }
@@ -402,15 +407,35 @@ const music = {
   bee_dance: makeBeeDance(),
 };
 
+function writeM4a(wavPath) {
+  const m4aPath = wavPath.replace(/\.wav$/, '.m4a');
+  try {
+    execFileSync(
+      'afconvert',
+      ['-f', 'm4af', '-d', 'aac', '-b', '160000', wavPath, m4aPath],
+      { stdio: 'inherit' },
+    );
+  } catch {
+    execFileSync(
+      'ffmpeg',
+      ['-y', '-i', wavPath, '-c:a', 'aac', '-b:a', '160k', m4aPath],
+      { stdio: 'inherit' },
+    );
+  }
+  return m4aPath;
+}
+
 for (const [name, samples] of Object.entries(sfx)) {
   const file = path.join(sfxDir, `${name}.wav`);
-  writeWav(file, samples);
+  writeWav(file, normalize(samples));
+  writeM4a(file);
   console.log('sfx', name, (samples.length / SAMPLE_RATE).toFixed(2) + 's');
 }
 
 for (const [name, samples] of Object.entries(music)) {
   const file = path.join(musicDir, `${name}.wav`);
-  writeWav(file, samples);
+  writeWav(file, normalize(samples));
+  writeM4a(file);
   console.log('music', name, (samples.length / SAMPLE_RATE).toFixed(2) + 's');
 }
 

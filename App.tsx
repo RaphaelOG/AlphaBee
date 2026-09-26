@@ -11,6 +11,7 @@ import {
   Nunito_800ExtraBold,
   Nunito_900Black,
 } from '@expo-google-fonts/nunito';
+import { Baloo2_700Bold, Baloo2_800ExtraBold } from '@expo-google-fonts/baloo-2';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LandingScreen } from './src/screens/LandingScreen';
 import { AuthScreen } from './src/screens/AuthScreen';
@@ -34,6 +35,8 @@ export default function App() {
     Nunito_700Bold,
     Nunito_800ExtraBold,
     Nunito_900Black,
+    Baloo2_700Bold,
+    Baloo2_800ExtraBold,
   });
 
   if (!fontsLoaded) {

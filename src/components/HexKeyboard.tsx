@@ -1,9 +1,13 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Hexagon } from './Hexagon';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 const ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+const VOWELS = new Set(['A', 'E', 'I', 'O', 'U']);
+const KEY = 40;
+const DEPTH = 3;
 
 type HexKeyboardProps = {
   onKey: (letter: string) => void;
@@ -11,33 +15,56 @@ type HexKeyboardProps = {
   disabled?: boolean;
 };
 
+type KeyProps = {
+  size: number;
+  face: string;
+  faceEnd: string;
+  edge: string;
+  stroke: string;
+  children: React.ReactNode;
+};
+
+/** Hex key with a solid colored base so it looks like a chunky toy block. */
+function ToyKey({ size, face, faceEnd, edge, stroke, children }: KeyProps) {
+  const h = size * 0.866;
+  return (
+    <View style={{ width: size, height: h + DEPTH }}>
+      <Hexagon size={size} fill={edge} fillEnd={edge} stroke={stroke} strokeWidth={2} style={{ position: 'absolute', top: DEPTH }} />
+      <Hexagon size={size} fill={face} fillEnd={faceEnd} stroke={stroke} strokeWidth={2}>
+        {children}
+      </Hexagon>
+    </View>
+  );
+}
+
 export function HexKeyboard({ onKey, onBackspace, disabled }: HexKeyboardProps) {
   return (
     <View style={styles.wrap}>
       {ROWS.map((row, rowIndex) => (
         <View key={row} style={[styles.row, rowIndex === 1 && styles.rowInset, rowIndex === 2 && styles.rowInsetMore]}>
-          {rowIndex === 2 ? (
-            <View style={styles.spacer} />
-          ) : null}
-          {row.split('').map((letter) => (
-            <Pressable
-              key={letter}
-              disabled={disabled}
-              onPress={() => onKey(letter)}
-              style={({ pressed }) => [styles.key, pressed && styles.keyPressed, disabled && styles.disabled]}
-              accessibilityLabel={`Letter ${letter}`}
-            >
-              <Hexagon
-                size={40}
-                fill={colors.white}
-                fillEnd={colors.creamSoft}
-                stroke={colors.honey}
-                strokeWidth={2}
+          {rowIndex === 2 ? <View style={styles.spacer} /> : null}
+          {row.split('').map((letter) => {
+            const vowel = VOWELS.has(letter);
+            return (
+              <Pressable
+                key={letter}
+                disabled={disabled}
+                onPress={() => onKey(letter)}
+                style={({ pressed }) => [styles.key, pressed && styles.keyPressed, disabled && styles.disabled]}
+                accessibilityLabel={`Letter ${letter}`}
               >
-                <Text style={styles.keyText}>{letter}</Text>
-              </Hexagon>
-            </Pressable>
-          ))}
+                <ToyKey
+                  size={KEY}
+                  face={vowel ? colors.sunny : colors.white}
+                  faceEnd={vowel ? colors.honeyLight : colors.creamSoft}
+                  edge={vowel ? colors.honey : colors.honeyLight}
+                  stroke={vowel ? colors.honeyDark : colors.honey}
+                >
+                  <Text style={[styles.keyText, vowel && styles.vowelText]}>{letter}</Text>
+                </ToyKey>
+              </Pressable>
+            );
+          })}
           {rowIndex === 2 ? (
             <Pressable
               disabled={disabled}
@@ -45,15 +72,15 @@ export function HexKeyboard({ onKey, onBackspace, disabled }: HexKeyboardProps) 
               style={({ pressed }) => [styles.key, styles.backspace, pressed && styles.keyPressed]}
               accessibilityLabel="Backspace"
             >
-              <Hexagon
+              <ToyKey
                 size={50}
-                fill={colors.honeyLight}
-                fillEnd={colors.gold}
-                stroke={colors.honeyDark}
-                strokeWidth={2}
+                face={colors.coral}
+                faceEnd={colors.coralDark}
+                edge={colors.coralDark}
+                stroke={colors.coralDark}
               >
-                <Text style={styles.backspaceText}>⌫</Text>
-              </Hexagon>
+                <Ionicons name="backspace" size={20} color={colors.white} />
+              </ToyKey>
             </Pressable>
           ) : null}
         </View>
@@ -86,23 +113,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   keyPressed: {
-    transform: [{ scale: 0.92 }],
+    transform: [{ translateY: DEPTH }, { scale: 0.96 }],
   },
   disabled: {
     opacity: 0.5,
   },
   keyText: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 16,
-    color: colors.text,
+    fontFamily: fonts.display,
+    fontSize: 17,
+    color: colors.chocolate,
+    marginTop: -DEPTH,
+  },
+  vowelText: {
+    color: colors.honeyDeep,
   },
   backspace: {
     marginLeft: 4,
-  },
-  backspaceText: {
-    fontSize: 18,
-    color: colors.honeyDark,
-    fontFamily: 'Nunito_700Bold',
   },
   spacer: {
     width: 6,

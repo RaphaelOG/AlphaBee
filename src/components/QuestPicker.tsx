@@ -1,7 +1,9 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../theme';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, fonts, typography } from '../theme';
 import { QUEST_OPTIONS, type QuestId } from '../data/quests';
+import { KidCard, Pill, toneColors, type KidTone } from './KidUI';
 
 type QuestPickerProps = {
   selectedId: QuestId;
@@ -10,141 +12,154 @@ type QuestPickerProps = {
   completedToday: boolean;
 };
 
+const QUEST_LOOK: Record<QuestId, { emoji: string; tone: KidTone }> = {
+  quick: { emoji: '⚡', tone: 'sky' },
+  classic: { emoji: '🍯', tone: 'honey' },
+  hero: { emoji: '🏆', tone: 'coral' },
+};
+
 export function QuestPicker({ selectedId, onSelect, streakDays, completedToday }: QuestPickerProps) {
   return (
-    <View style={styles.wrap}>
+    <KidCard tone="honey" drip contentStyle={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.sectionLabel}>{"Today's quest"}</Text>
-        <View style={styles.streakPill}>
-          <Text style={styles.streakPillText}>
-            {streakDays > 0 ? `${streakDays}-day streak` : 'Start a streak'}
-            {completedToday ? ' · done today' : ''}
-          </Text>
+        <View style={styles.headerLeft}>
+          <Ionicons name="flag" size={16} color={colors.honeyDark} />
+          <Text style={typography.eyebrow}>{"Today's quest"}</Text>
         </View>
+        <Pill
+          emoji={streakDays > 0 ? '🔥' : '✨'}
+          tone={streakDays > 0 ? 'coral' : 'cream'}
+          label={
+            streakDays > 0
+              ? `${streakDays}-day streak${completedToday ? ' · done!' : ''}`
+              : 'Start a streak'
+          }
+        />
       </View>
-      <Text style={styles.hint}>Pick a short goal — the session ends when you finish</Text>
+      <Text style={styles.hint}>Pick a goal — the quest ends when you spell them all!</Text>
 
       <View style={styles.row}>
         {QUEST_OPTIONS.map((quest) => {
           const active = quest.id === selectedId;
+          const look = QUEST_LOOK[quest.id];
+          const t = toneColors(look.tone);
           return (
             <Pressable
               key={quest.id}
               onPress={() => onSelect(quest.id)}
-              style={[styles.card, active && styles.cardActive]}
+              style={({ pressed }) => [
+                styles.option,
+                { borderColor: t.border, borderBottomColor: t.edge, backgroundColor: active ? t.tint : colors.white },
+                active && styles.optionActive,
+                pressed && styles.pressed,
+              ]}
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
               accessibilityLabel={`${quest.title}, ${quest.subtitle}`}
             >
-              <View style={[styles.badge, active && styles.badgeActive]}>
-                <Text style={[styles.badgeText, active && styles.badgeTextActive]}>{quest.badge}</Text>
+              {active ? (
+                <View style={[styles.check, { backgroundColor: t.edge }]}>
+                  <Ionicons name="checkmark" size={12} color={colors.white} />
+                </View>
+              ) : null}
+              <Text style={styles.emoji}>{look.emoji}</Text>
+              <View style={[styles.badge, { backgroundColor: active ? t.edge : t.tint, borderColor: t.edge }]}>
+                <Text style={[styles.badgeText, { color: active ? colors.white : t.text }]}>{quest.badge}</Text>
+                <Text style={[styles.badgeSub, { color: active ? colors.white : t.text }]}>words</Text>
               </View>
-              <Text style={[styles.title, active && styles.titleActive]}>{quest.title}</Text>
-              <Text style={styles.subtitle}>{quest.subtitle}</Text>
+              <Text style={[styles.title, active && { color: t.text }]} numberOfLines={1}>
+                {quest.title}
+              </Text>
             </Pressable>
           );
         })}
       </View>
-    </View>
+    </KidCard>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    width: '100%',
-    backgroundColor: colors.white,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: colors.honey,
-    padding: 14,
+  card: {
     gap: 10,
+    paddingTop: 22,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
+    flexWrap: 'wrap',
   },
-  sectionLabel: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 12,
-    color: colors.honeyDark,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  streakPill: {
-    backgroundColor: colors.creamSoft,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderWidth: 1.5,
-    borderColor: colors.honeyLight,
-  },
-  streakPillText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 11,
-    color: colors.honeyDark,
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   hint: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 12,
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
     color: colors.textMuted,
   },
   row: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
-  card: {
+  option: {
     flex: 1,
     alignItems: 'center',
-    backgroundColor: colors.creamSoft,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: colors.honeyLight,
+    borderRadius: 20,
+    borderWidth: 2.5,
+    borderBottomWidth: 5,
     paddingVertical: 12,
     paddingHorizontal: 6,
-    gap: 4,
+    gap: 6,
+    overflow: 'visible',
   },
-  cardActive: {
-    backgroundColor: colors.goldBright,
-    borderColor: colors.honeyDark,
+  optionActive: {
+    transform: [{ scale: 1.03 }],
   },
-  badge: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: colors.white,
-    borderWidth: 2,
-    borderColor: colors.honey,
+  pressed: {
+    transform: [{ translateY: 2 }],
+  },
+  check: {
+    position: 'absolute',
+    top: -8,
+    right: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
+    borderWidth: 2,
+    borderColor: colors.white,
   },
-  badgeActive: {
-    backgroundColor: colors.honeyDark,
-    borderColor: colors.honeyDark,
+  emoji: {
+    fontSize: 26,
+  },
+  badge: {
+    minWidth: 52,
+    borderRadius: 14,
+    borderWidth: 2,
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
   },
   badgeText: {
-    fontFamily: 'Nunito_900Black',
-    fontSize: 14,
-    color: colors.honeyDark,
+    fontFamily: fonts.display,
+    fontSize: 20,
+    lineHeight: 24,
   },
-  badgeTextActive: {
-    color: colors.white,
+  badgeSub: {
+    fontFamily: fonts.bold,
+    fontSize: 9,
+    marginTop: -3,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   title: {
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: fonts.extraBold,
     fontSize: 12,
     color: colors.text,
-    textAlign: 'center',
-  },
-  titleActive: {
-    color: colors.text,
-  },
-  subtitle: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 10,
-    color: colors.textMuted,
     textAlign: 'center',
   },
 });

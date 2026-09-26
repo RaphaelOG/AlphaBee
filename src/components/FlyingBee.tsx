@@ -16,10 +16,11 @@ type TrailLetter = {
 
 type FlyingBeeProps = {
   hiveCorner?: 'topRight' | 'bottomRight';
+  beeSize?: number;
 };
 
 /** Bee loops toward the hive, leaving ephemeral alphabet sparkles. */
-export function FlyingBee({ hiveCorner = 'topRight' }: FlyingBeeProps) {
+export function FlyingBee({ hiveCorner = 'topRight', beeSize = 72 }: FlyingBeeProps) {
   const progress = useRef(new Animated.Value(0)).current;
   const [trail, setTrail] = useState<TrailLetter[]>([]);
   const idRef = useRef(0);
@@ -117,7 +118,7 @@ export function FlyingBee({ hiveCorner = 'topRight' }: FlyingBeeProps) {
         </Animated.Text>
       ))}
       <Animated.View style={{ transform: [{ translateX }, { translateY }] }}>
-        <AlphaBee size={72} happy />
+        <AlphaBee size={beeSize} happy still />
       </Animated.View>
     </View>
   );

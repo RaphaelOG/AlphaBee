@@ -83,7 +83,6 @@ export function Hexagon({
   const verts = flatTopVertices(width, height);
   const points = verts.map((v) => `${v.x},${v.y}`).join(' ');
   const radius = cornerRadius ?? size * 0.15;
-  console.log('radius', radius);
   const pathD = useMemo(
     () => (rounded ? roundedHexPath(width, height, radius) : ''),
     [rounded, width, height, radius],
@@ -138,18 +137,16 @@ export function HexLetter({
   const palette = {
     empty: { fill: colors.creamSoft, fillEnd: colors.cream, stroke: colors.honey },
     filled: { fill: colors.goldBright, fillEnd: colors.gold, stroke: colors.honeyDark },
-    correct: { fill: colors.successGlow, fillEnd: colors.goldBright, stroke: colors.honeyDark },
-    incorrect: { fill: colors.offWhite, fillEnd: colors.cream, stroke: colors.softRedOutline },
+    correct: { fill: colors.leafLight, fillEnd: colors.leaf, stroke: colors.leafDark },
+    incorrect: { fill: colors.coralLight, fillEnd: colors.coralLight, stroke: colors.coralDark },
   }[state];
 
+  const letterColor =
+    state === 'incorrect' ? colors.coralDark : state === 'correct' ? colors.leafDark : colors.chocolate;
+
   return (
-    <Hexagon size={size} rounded cornerRadius={size * 0.1} {...palette}>
-      <Text
-        style={[
-          styles.letter,
-          { fontSize: size * 0.38, color: state === 'incorrect' ? colors.softRed : colors.text },
-        ]}
-      >
+    <Hexagon size={size} rounded cornerRadius={size * 0.1} strokeWidth={2.5} {...palette}>
+      <Text style={[styles.letter, { fontSize: size * 0.4, color: letterColor }]}>
         {letter?.toUpperCase() ?? ''}
       </Text>
     </Hexagon>
@@ -171,7 +168,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   letter: {
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: 'Baloo2_800ExtraBold',
     textAlign: 'center',
   },
 });

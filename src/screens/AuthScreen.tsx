@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,11 +12,16 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AlphaBee } from '../components/AlphaBee';
+import { Beehive } from '../components/HiveDecor';
+import { ChunkyButton, KidCard, SpeechBubble } from '../components/KidUI';
+import { FlowerMeadow, HoneycombPattern, Pollen, SkyScene } from '../components/SceneDecor';
+import { NavButton, TopNav } from '../components/TopNav';
 import { useAuth } from '../auth';
 import { ApiError, API_BASE_URL } from '../api';
-import { colors, typography } from '../theme';
+import { colors, fonts } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
@@ -68,27 +72,36 @@ export function AuthScreen({ navigation }: Props) {
   };
 
   return (
-    <LinearGradient colors={[colors.skyTop, colors.cream, colors.skyBottom]} style={styles.fill}>
+    <LinearGradient colors={[colors.sky, colors.skyTop, colors.creamSoft]} style={styles.fill}>
       <StatusBar style="dark" />
+      <HoneycombPattern opacity={0.07} rows={40} />
+      <SkyScene sunSize={72} />
+      <Pollen count={8} />
+      <FlowerMeadow height={96} />
       <SafeAreaView style={styles.safe}>
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
+        <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backWrap}>
-              <Text style={styles.back}>Back</Text>
-            </Pressable>
+            <TopNav left={<NavButton icon="arrow-back" label="Back" onPress={() => navigation.goBack()} />} />
 
-            <AlphaBee size={56} />
+            <View style={styles.hero}>
+              <AlphaBee size={92} mood="happy" />
+              <View style={styles.heroText}>
+                <SpeechBubble
+                  text="Grown-ups sign in here — kids never need an account!"
+                  tail="left"
+                  style={styles.bubble}
+                />
+              </View>
+              <View style={styles.hive} pointerEvents="none">
+                <Beehive size={58} branch={false} />
+              </View>
+            </View>
+
             <Text style={styles.title}>Parent Hive</Text>
-            <Text style={styles.subtitle}>
-              Adults sign in so kids can spell — children never need an account.
-            </Text>
 
             <View style={styles.tabs}>
               <Pressable
@@ -98,6 +111,7 @@ export function AuthScreen({ navigation }: Props) {
                   setError(null);
                 }}
               >
+                <Ionicons name="log-in" size={16} color={tab === 'login' ? colors.white : colors.honeyDark} />
                 <Text style={[styles.tabText, tab === 'login' && styles.tabTextActive]}>Sign in</Text>
               </Pressable>
               <Pressable
@@ -107,16 +121,16 @@ export function AuthScreen({ navigation }: Props) {
                   setError(null);
                 }}
               >
-                <Text style={[styles.tabText, tab === 'register' && styles.tabTextActive]}>
-                  Create account
-                </Text>
+                <Ionicons name="person-add" size={16} color={tab === 'register' ? colors.white : colors.honeyDark} />
+                <Text style={[styles.tabText, tab === 'register' && styles.tabTextActive]}>Create account</Text>
               </Pressable>
             </View>
 
-            <View style={styles.card}>
+            <KidCard tone="honey" drip contentStyle={styles.card}>
               {tab === 'register' ? (
                 <Field
                   label="Your name"
+                  icon="happy"
                   value={displayName}
                   onChangeText={setDisplayName}
                   placeholder="Alex"
@@ -125,6 +139,7 @@ export function AuthScreen({ navigation }: Props) {
               ) : null}
               <Field
                 label="Email"
+                icon="mail"
                 value={email}
                 onChangeText={setEmail}
                 placeholder="parent@example.com"
@@ -134,6 +149,7 @@ export function AuthScreen({ navigation }: Props) {
               />
               <Field
                 label="Password"
+                icon="lock-closed"
                 value={password}
                 onChangeText={setPassword}
                 placeholder={tab === 'register' ? 'At least 8 characters' : 'Your password'}
@@ -141,26 +157,30 @@ export function AuthScreen({ navigation }: Props) {
                 autoComplete={tab === 'login' ? 'password' : 'new-password'}
               />
 
-              {error ? <Text style={styles.error}>{error}</Text> : null}
+              {error ? (
+                <View style={styles.errorBox}>
+                  <Ionicons name="alert-circle" size={16} color={colors.coralDark} />
+                  <Text style={styles.error}>{error}</Text>
+                </View>
+              ) : null}
 
-              <Pressable
-                style={[styles.submit, busy && styles.submitDisabled]}
+              <ChunkyButton
+                label={busy ? 'Buzzing in…' : tab === 'login' ? 'Sign in' : 'Create parent account'}
+                tone="honey"
+                fullWidth
+                disabled={busy}
+                iconRight={<Ionicons name="arrow-forward" size={20} color={colors.white} />}
                 onPress={() => {
                   void onSubmit();
                 }}
-                disabled={busy}
-              >
-                {busy ? (
-                  <ActivityIndicator color={colors.white} />
-                ) : (
-                  <Text style={styles.submitText}>
-                    {tab === 'login' ? 'Sign in' : 'Create parent account'}
-                  </Text>
-                )}
-              </Pressable>
-            </View>
+                style={styles.submit}
+              />
+            </KidCard>
 
-            <Text style={styles.hint}>API: {API_BASE_URL}</Text>
+            <View style={styles.hintRow}>
+              <Ionicons name="server" size={12} color={colors.textMuted} />
+              <Text style={styles.hint}>API: {API_BASE_URL}</Text>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -170,18 +190,19 @@ export function AuthScreen({ navigation }: Props) {
 
 function Field({
   label,
+  icon,
   ...inputProps
 }: {
   label: string;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
 } & React.ComponentProps<typeof TextInput>) {
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput
-        {...inputProps}
-        placeholderTextColor={colors.textMuted}
-        style={styles.input}
-      />
+      <View style={styles.inputWrap}>
+        <Ionicons name={icon} size={18} color={colors.honey} style={styles.inputIcon} />
+        <TextInput {...inputProps} placeholderTextColor={colors.textMuted} style={styles.input} />
+      </View>
     </View>
   );
 }
@@ -191,114 +212,130 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   flex: { flex: 1 },
   content: {
-    paddingHorizontal: 20,
-    paddingBottom: 32,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 120,
     alignItems: 'center',
+    gap: 12,
   },
-  backWrap: {
-    alignSelf: 'flex-start',
-    marginBottom: 8,
+  hero: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
   },
-  back: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 15,
-    color: colors.honeyDark,
+  heroText: {
+    flex: 1,
+  },
+  bubble: {
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  hive: {
+    marginLeft: 4,
   },
   title: {
-    ...typography.title,
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: 6,
-    marginBottom: 18,
-    lineHeight: 20,
+    fontFamily: fonts.display,
+    fontSize: 30,
+    color: colors.chocolate,
+    alignSelf: 'flex-start',
+    marginTop: -8,
   },
   tabs: {
     flexDirection: 'row',
     width: '100%',
     backgroundColor: colors.white,
-    borderRadius: 16,
-    borderWidth: 2,
+    borderRadius: 999,
+    borderWidth: 2.5,
     borderColor: colors.honeyLight,
+    borderBottomWidth: 5,
+    borderBottomColor: colors.honey,
     padding: 4,
-    marginBottom: 14,
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 999,
   },
   tabActive: {
     backgroundColor: colors.gold,
   },
   tabText: {
-    fontFamily: 'Nunito_700Bold',
+    fontFamily: fonts.extraBold,
     fontSize: 14,
-    color: colors.textMuted,
+    color: colors.honeyDark,
   },
   tabTextActive: {
     color: colors.white,
   },
   card: {
-    width: '100%',
-    backgroundColor: colors.white,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: colors.honey,
-    padding: 16,
     gap: 12,
+    paddingTop: 22,
   },
   field: {
     gap: 6,
   },
   label: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 13,
+    fontFamily: fonts.extraBold,
+    fontSize: 12,
     color: colors.honeyDark,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 2.5,
+    borderColor: colors.honeyLight,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.honey,
+    borderRadius: 16,
+    backgroundColor: colors.white,
+    paddingLeft: 12,
+  },
+  inputIcon: {
+    marginRight: 8,
   },
   input: {
-    borderWidth: 1.5,
-    borderColor: colors.honeyLight,
-    borderRadius: 14,
-    paddingHorizontal: 14,
+    flex: 1,
+    paddingRight: 14,
     paddingVertical: 12,
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 15,
-    color: colors.text,
-    backgroundColor: colors.creamSoft,
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    color: colors.chocolate,
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.coralLight,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: colors.coral,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   error: {
-    fontFamily: 'Nunito_700Bold',
+    flex: 1,
+    fontFamily: fonts.bold,
     fontSize: 13,
-    color: colors.softRed,
-    textAlign: 'center',
+    color: colors.coralDark,
   },
   submit: {
     marginTop: 4,
-    backgroundColor: colors.honey,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: colors.honeyDark,
-    paddingVertical: 14,
+  },
+  hintRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  submitDisabled: {
-    opacity: 0.6,
-  },
-  submitText: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 16,
-    color: colors.white,
+    gap: 4,
+    marginTop: 4,
   },
   hint: {
-    marginTop: 16,
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: fonts.semiBold,
     fontSize: 11,
     color: colors.textMuted,
     textAlign: 'center',

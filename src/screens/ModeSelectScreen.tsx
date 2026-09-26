@@ -1,16 +1,20 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { ModeSwitcher } from '../components/ModeSwitcher';
 import { PracticeHiveModal } from '../components/PracticeHiveModal';
 import { HoneycombButton } from '../components/HoneycombButton';
-import { Hexagon } from '../components/Hexagon';
 import { QuestPicker } from '../components/QuestPicker';
-import { colors } from '../theme';
+import { KidCard, Pill } from '../components/KidUI';
+import { FlowerMeadow, HoneycombPattern, Pollen, SkyScene, Sparkles } from '../components/SceneDecor';
+import { NavButton, TopNav } from '../components/TopNav';
+import { getAvatar } from '../data/avatars';
+import { colors, fonts } from '../theme';
 import type { GradeLevel } from '../data/words';
 import { getDefaultUnitId, getUnitById, gradeLabel } from '../data/curriculum';
 import { getQuestById, type QuestId } from '../data/quests';
@@ -116,45 +120,41 @@ export function ModeSelectScreen({ navigation }: Props) {
         keyboardShouldPersistTaps="handled"
       >
         <LinearGradient
-          colors={[colors.skyTop, colors.cream, colors.skyBottom]}
+          colors={[colors.sky, colors.skyTop, colors.creamSoft]}
           style={styles.gradient}
         >
+          <HoneycombPattern opacity={0.07} rows={40} />
+          <SkyScene sunSize={72} />
+          <Pollen count={8} />
+          <FlowerMeadow height={88} />
           <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
-            <View style={styles.bgHexRow} pointerEvents="none">
-              {[0, 1, 2, 3, 4, 5].map((i) => (
-                <Hexagon
-                  key={i}
-                  size={28}
-                  fill={i % 2 === 0 ? colors.honeyLight : colors.goldBright}
-                  fillEnd={colors.gold}
-                  stroke={colors.honey}
-                  strokeWidth={1.5}
-                  style={{ opacity: 0.35, marginLeft: i === 0 ? 0 : -6 }}
-                />
-              ))}
-            </View>
-
             <View style={styles.content}>
-              <View style={styles.topLinks}>
-                <Pressable onPress={() => navigation.goBack()} hitSlop={10}>
-                  <Text style={styles.link}>Home</Text>
-                </Pressable>
-                <View style={styles.topRight}>
-                  {activeChild ? (
-                    <Pressable onPress={() => navigation.navigate('ChildSelect')} hitSlop={10}>
-                      <Text style={styles.childChip} numberOfLines={1}>
-                        {activeChild.nickname}
-                      </Text>
-                    </Pressable>
-                  ) : null}
-                  <Pressable onPress={() => navigation.navigate('HiveRewards')} hitSlop={10}>
-                    <Text style={styles.link}>My Hive</Text>
-                  </Pressable>
-                  <Pressable onPress={() => navigation.navigate('Settings')} hitSlop={10}>
-                    <Text style={styles.link}>Settings</Text>
-                  </Pressable>
-                </View>
-              </View>
+              <TopNav
+                left={<NavButton icon="home" label="Home" onPress={() => navigation.goBack()} />}
+                right={
+                  <>
+                    {activeChild ? (
+                      <NavButton
+                        icon="person"
+                        emoji={getAvatar(activeChild.avatarKey).emoji}
+                        label={activeChild.nickname}
+                        onPress={() => navigation.navigate('ChildSelect')}
+                        accessibilityLabel="Switch learner"
+                      />
+                    ) : null}
+                    <NavButton
+                      icon="trophy"
+                      onPress={() => navigation.navigate('HiveRewards')}
+                      accessibilityLabel="My Hive"
+                    />
+                    <NavButton
+                      icon="settings-sharp"
+                      onPress={() => navigation.navigate('Settings')}
+                      accessibilityLabel="Settings"
+                    />
+                  </>
+                }
+              />
 
               <ModeSwitcher
                 mode={mode}
@@ -164,6 +164,7 @@ export function ModeSelectScreen({ navigation }: Props) {
                 onGradeChange={handleGradeChange}
                 onUnitChange={setUnitId}
                 onOpenPractice={() => setPracticeOpen(true)}
+                learnerName={activeChild?.nickname}
               />
 
               <View style={styles.questBlock}>
@@ -176,17 +177,27 @@ export function ModeSelectScreen({ navigation }: Props) {
               </View>
 
               {mode === 'quest' ? (
-                <View style={styles.playBlock}>
-                  <Text style={styles.readyText}>
-                    {quest.title}: {quest.subtitle}
-                  </Text>
-                  <Text style={styles.readySub}>
-                    {activeUnit
-                      ? `${gradeLabel(grade)} · “${activeUnit.title}” · look then listen`
-                      : 'Two rounds per word — look first, then listen'}
-                  </Text>
-                  <HoneycombButton label="Play" size={132} onPress={startQuest} />
-                </View>
+                <KidCard tone="honey" tinted style={styles.playBlockWrap} contentStyle={styles.playBlock}>
+                  <Sparkles count={7} seed={3} />
+                  <View style={styles.readyRow}>
+                    <Ionicons name="rocket" size={18} color={colors.honeyDark} />
+                    <Text style={styles.readyText}>
+                      {quest.title} · {quest.subtitle}
+                    </Text>
+                  </View>
+                  <View style={styles.readyPills}>
+                    <Pill label={gradeLabel(grade)} tone="leaf" emoji="🎒" />
+                    {activeUnit ? <Pill label={activeUnit.title} tone="sky" emoji="🔤" /> : null}
+                    <Pill label="Look, then listen" tone="coral" emoji="👀" />
+                  </View>
+                  <HoneycombButton
+                    label="Play!"
+                    size={140}
+                    onPress={startQuest}
+                    icon={<Ionicons name="play" size={26} color={colors.white} />}
+                    style={styles.playButton}
+                  />
+                </KidCard>
               ) : null}
             </View>
           </SafeAreaView>
@@ -222,80 +233,46 @@ const styles = StyleSheet.create({
   },
   safe: {
     flexGrow: 1,
-    marginTop: 50,
-  },
-  bgHexRow: {
-    position: 'absolute',
-    top: 8,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    zIndex: 0,
   },
   content: {
     paddingHorizontal: 18,
-    paddingTop: 12,
-    paddingBottom: 36,
+    paddingTop: 8,
+    paddingBottom: 110,
     alignItems: 'center',
-  },
-  topLinks: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  topRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  link: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 14,
-    color: colors.honeyDark,
-  },
-  childChip: {
-    maxWidth: 120,
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 13,
-    color: colors.honeyDark,
-    backgroundColor: colors.white,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: colors.honeyLight,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    gap: 14,
   },
   questBlock: {
     width: '100%',
-    marginTop: 16,
+    marginTop: 2,
+  },
+  playBlockWrap: {
+    marginTop: 4,
   },
   playBlock: {
-    marginTop: 18,
-    width: '100%',
     alignItems: 'center',
-    backgroundColor: colors.white,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: colors.honey,
     paddingVertical: 18,
     paddingHorizontal: 16,
-    gap: 6,
+    gap: 10,
+    overflow: 'hidden',
+  },
+  readyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   readyText: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 18,
-    color: colors.text,
+    fontFamily: fonts.display,
+    fontSize: 20,
+    color: colors.chocolate,
     textAlign: 'center',
   },
-  readySub: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginBottom: 8,
+  readyPills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  playButton: {
+    marginTop: 6,
   },
 });

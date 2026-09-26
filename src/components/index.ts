@@ -9,3 +9,7 @@ export { HiveStructure, CollectibleHive } from './HiveDecor';
 export { FlyingBee } from './FlyingBee';
 export { BeeCircle } from './BeeCircle';
 export { LetterSlots } from './LetterSlots';
+export { KidCard, ChunkyButton, Sticker, SpeechBubble, Pill, HoneyDrip, toneColors } from './KidUI';
+export type { KidTone } from './KidUI';
+export { HoneycombPattern, SkyScene, FlowerMeadow, Sparkles, Confetti, Pollen } from './SceneDecor';
+export { TopNav, NavButton } from './TopNav';

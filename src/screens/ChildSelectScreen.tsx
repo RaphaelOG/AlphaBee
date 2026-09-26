@@ -1,40 +1,30 @@
 import React, { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { AlphaBee } from '../components/AlphaBee';
+import { ChunkyButton, KidCard, Pill, SpeechBubble, Sticker, toneColors } from '../components/KidUI';
+import { FlowerMeadow, HoneycombPattern, Pollen, SkyScene } from '../components/SceneDecor';
+import { NavButton, TopNav } from '../components/TopNav';
 import { useAuth } from '../auth';
 import { ApiError } from '../api';
+import { AVATARS, getAvatar, type AvatarKey } from '../data/avatars';
 import { GRADE_LEVELS, gradeLabel, type GradeLevel } from '../data/curriculum';
-import { colors, typography } from '../theme';
+import { colors, fonts } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChildSelect'>;
 
 export function ChildSelectScreen({ navigation }: Props) {
-  const {
-    parent,
-    children,
-    activeChild,
-    refreshChildren,
-    selectChild,
-    createChild,
-    logout,
-  } = useAuth();
+  const { parent, children, activeChild, refreshChildren, selectChild, createChild, logout } = useAuth();
 
   const [nickname, setNickname] = useState('');
   const [gradeLevel, setGradeLevel] = useState<GradeLevel>('1');
+  const [avatarKey, setAvatarKey] = useState<AvatarKey>('bee');
   const [busy, setBusy] = useState(false);
   const [loadingList, setLoadingList] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,11 +66,10 @@ export function ChildSelectScreen({ navigation }: Props) {
     setBusy(true);
     setError(null);
     try {
-      const child = await createChild({ nickname: name, gradeLevel });
+      await createChild({ nickname: name, gradeLevel, avatarKey });
       setNickname('');
       setShowForm(false);
       navigation.replace('ModeSelect');
-      void child;
     } catch (err) {
       if (err instanceof ApiError) setError(err.message);
       else setError('Could not create learner profile.');
@@ -94,27 +83,33 @@ export function ChildSelectScreen({ navigation }: Props) {
     navigation.replace('Landing');
   };
 
-  return (
-    <LinearGradient colors={[colors.skyTop, colors.cream, colors.skyBottom]} style={styles.fill}>
-      <StatusBar style="dark" />
-      <SafeAreaView style={styles.safe}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.topRow}>
-            <Pressable onPress={() => navigation.navigate('Landing')} hitSlop={12}>
-              <Text style={styles.link}>Home</Text>
-            </Pressable>
-            <Pressable onPress={() => void onSignOut()} hitSlop={12}>
-              <Text style={styles.link}>Sign out</Text>
-            </Pressable>
-          </View>
+  const previewAvatar = getAvatar(avatarKey);
 
-          <AlphaBee size={52} />
-          <Text style={styles.title}>Who is spelling?</Text>
-          <Text style={styles.subtitle}>
-            {parent?.displayName
-              ? `Hi ${parent.displayName} — pick a learner hive`
-              : 'Pick a learner hive to start'}
-          </Text>
+  return (
+    <LinearGradient colors={[colors.sky, colors.skyTop, colors.creamSoft]} style={styles.fill}>
+      <StatusBar style="dark" />
+      <HoneycombPattern opacity={0.07} rows={40} />
+      <SkyScene sunSize={72} />
+      <Pollen count={8} />
+      <FlowerMeadow height={100} />
+      <SafeAreaView style={styles.safe}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <TopNav
+            left={<NavButton icon="home" label="Home" onPress={() => navigation.navigate('Landing')} />}
+            right={<NavButton icon="log-out-outline" label="Sign out" onPress={() => void onSignOut()} />}
+          />
+
+          <View style={styles.hero}>
+            <AlphaBee size={96} mood="happy" />
+            <View style={styles.heroText}>
+              <SpeechBubble
+                text={parent?.displayName ? `Hi ${parent.displayName}! Who is spelling today?` : 'Who is spelling today?'}
+                tail="left"
+                style={styles.bubble}
+              />
+            </View>
+          </View>
+          <Text style={styles.title}>Pick a Learner</Text>
 
           {loadingList ? (
             <ActivityIndicator color={colors.honey} style={{ marginVertical: 24 }} />
@@ -122,39 +117,83 @@ export function ChildSelectScreen({ navigation }: Props) {
             <View style={styles.list}>
               {children.map((child) => {
                 const selected = activeChild?.id === child.id;
+                const av = getAvatar(child.avatarKey);
+                const t = toneColors(av.tone);
                 return (
-                  <Pressable
+                  <KidCard
                     key={child.id}
-                    style={[styles.childCard, selected && styles.childCardSelected]}
+                    tone={av.tone}
+                    tinted={selected}
+                    selected={selected}
                     onPress={() => {
                       void continueWithChild(child.id);
                     }}
                     disabled={busy}
+                    contentStyle={styles.childCard}
                   >
-                    <View style={styles.avatar}>
-                      <Text style={styles.avatarEmoji}>🐝</Text>
+                    <View style={[styles.avatar, { backgroundColor: t.tint, borderColor: t.border }]}>
+                      <Text style={styles.avatarEmoji}>{av.emoji}</Text>
                     </View>
                     <View style={styles.childCopy}>
                       <Text style={styles.childName}>{child.nickname}</Text>
-                      <Text style={styles.childMeta}>
-                        {gradeLabel(child.gradeLevel as GradeLevel)}
-                        {child.progress
-                          ? ` · ${child.progress.honeyTotal} honey · ${child.streak?.currentStreak ?? 0}-day streak`
-                          : ''}
-                      </Text>
+                      <View style={styles.childMeta}>
+                        <Pill label={gradeLabel(child.gradeLevel as GradeLevel)} tone="leaf" emoji="🎒" />
+                        {child.progress ? <Pill label={`${child.progress.honeyTotal}`} tone="honey" emoji="🍯" /> : null}
+                        {child.streak?.currentStreak ? (
+                          <Pill label={`${child.streak.currentStreak}`} tone="coral" emoji="🔥" />
+                        ) : null}
+                      </View>
                     </View>
-                    <Text style={styles.chevron}>›</Text>
-                  </Pressable>
+                    <View style={[styles.go, { backgroundColor: t.edge }]}>
+                      <Ionicons name="play" size={16} color={colors.white} />
+                    </View>
+                  </KidCard>
                 );
               })}
             </View>
           )}
 
           {showForm ? (
-            <View style={styles.formCard}>
-              <Text style={styles.formTitle}>
-                {children.length === 0 ? 'Add your first learner' : 'Add another learner'}
-              </Text>
+            <KidCard tone="berry" drip contentStyle={styles.formCard}>
+              <View style={styles.formHeader}>
+                <Sticker emoji={previewAvatar.emoji} tone={previewAvatar.tone} size={54} rotate={-6} />
+                <View style={styles.formHeaderText}>
+                  <Text style={styles.formTitle}>
+                    {children.length === 0 ? 'Add your first learner' : 'Add another learner'}
+                  </Text>
+                  <Text style={styles.formSub}>Pick a buddy, a name, and a grade</Text>
+                </View>
+              </View>
+
+              <Text style={styles.label}>Choose a buddy</Text>
+              <View style={styles.avatarRow}>
+                {AVATARS.map((av) => {
+                  const active = av.key === avatarKey;
+                  const t = toneColors(av.tone);
+                  return (
+                    <Pressable
+                      key={av.key}
+                      onPress={() => setAvatarKey(av.key)}
+                      accessibilityLabel={av.name}
+                      accessibilityState={{ selected: active }}
+                      style={({ pressed }) => [
+                        styles.avatarChoice,
+                        { borderColor: active ? t.edge : t.border, backgroundColor: active ? t.tint : colors.white },
+                        active && styles.avatarChoiceActive,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <Text style={styles.avatarChoiceEmoji}>{av.emoji}</Text>
+                      {active ? (
+                        <View style={[styles.avatarCheck, { backgroundColor: t.edge }]}>
+                          <Ionicons name="checkmark" size={10} color={colors.white} />
+                        </View>
+                      ) : null}
+                    </Pressable>
+                  );
+                })}
+              </View>
+
               <Text style={styles.label}>Nickname</Text>
               <TextInput
                 value={nickname}
@@ -165,43 +204,50 @@ export function ChildSelectScreen({ navigation }: Props) {
                 autoCapitalize="words"
                 maxLength={40}
               />
-              <Text style={[styles.label, { marginTop: 12 }]}>Grade</Text>
+
+              <Text style={styles.label}>Grade</Text>
               <View style={styles.gradeRow}>
-                {GRADE_LEVELS.map((g) => (
-                  <Pressable
-                    key={g}
-                    onPress={() => setGradeLevel(g)}
-                    style={[styles.gradeChip, gradeLevel === g && styles.gradeChipActive]}
-                  >
-                    <Text
-                      style={[styles.gradeChipText, gradeLevel === g && styles.gradeChipTextActive]}
+                {GRADE_LEVELS.map((g) => {
+                  const active = gradeLevel === g;
+                  return (
+                    <Pressable
+                      key={g}
+                      onPress={() => setGradeLevel(g)}
+                      style={({ pressed }) => [styles.gradeChip, active && styles.gradeChipActive, pressed && styles.pressed]}
                     >
-                      {gradeLabel(g)}
-                    </Text>
-                  </Pressable>
-                ))}
+                      <Text style={[styles.gradeChipText, active && styles.gradeChipTextActive]}>{gradeLabel(g)}</Text>
+                    </Pressable>
+                  );
+                })}
               </View>
 
               {error ? <Text style={styles.error}>{error}</Text> : null}
 
-              <Pressable
-                style={[styles.primaryBtn, busy && styles.btnDisabled]}
+              <ChunkyButton
+                label={busy ? 'Saving…' : 'Save & Play!'}
+                tone="berry"
+                fullWidth
+                disabled={busy}
+                icon={<Ionicons name="sparkles" size={20} color={colors.white} />}
                 onPress={() => {
                   void onCreate();
                 }}
-                disabled={busy}
-              >
-                {busy ? (
-                  <ActivityIndicator color={colors.white} />
-                ) : (
-                  <Text style={styles.primaryText}>Save & continue</Text>
-                )}
-              </Pressable>
-            </View>
+                style={styles.saveBtn}
+              />
+              {children.length > 0 ? (
+                <Pressable onPress={() => setShowForm(false)} hitSlop={8} style={styles.cancel}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </Pressable>
+              ) : null}
+            </KidCard>
           ) : (
-            <Pressable style={styles.secondaryBtn} onPress={() => setShowForm(true)}>
-              <Text style={styles.secondaryText}>+ Add learner</Text>
-            </Pressable>
+            <ChunkyButton
+              label="Add a learner"
+              tone="cream"
+              icon={<Ionicons name="add-circle" size={22} color={colors.honeyDark} />}
+              onPress={() => setShowForm(true)}
+              style={styles.addBtn}
+            />
           )}
 
           {error && !showForm ? <Text style={styles.error}>{error}</Text> : null}
@@ -215,118 +261,154 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   safe: { flex: 1 },
   content: {
-    paddingHorizontal: 20,
-    paddingBottom: 36,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 120,
     alignItems: 'center',
+    gap: 12,
   },
-  topRow: {
+  hero: {
     width: '100%',
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'center',
+    marginTop: 4,
   },
-  link: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 14,
-    color: colors.honeyDark,
+  heroText: {
+    flex: 1,
+  },
+  bubble: {
+    alignItems: 'flex-start',
+    marginBottom: 20,
   },
   title: {
-    ...typography.title,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: 6,
-    marginBottom: 18,
-    lineHeight: 20,
+    fontFamily: fonts.display,
+    fontSize: 30,
+    color: colors.chocolate,
+    alignSelf: 'flex-start',
+    marginTop: -8,
   },
   list: {
     width: '100%',
-    gap: 10,
+    gap: 12,
   },
   childCard: {
-    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: colors.honeyLight,
-    paddingHorizontal: 12,
+    gap: 12,
     paddingVertical: 12,
-    gap: 10,
-  },
-  childCardSelected: {
-    borderColor: colors.honeyDark,
-    backgroundColor: colors.creamSoft,
+    paddingHorizontal: 12,
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: colors.goldBright,
-    borderWidth: 2,
-    borderColor: colors.honey,
+    width: 58,
+    height: 58,
+    borderRadius: 20,
+    borderWidth: 2.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarEmoji: {
-    fontSize: 22,
+    fontSize: 30,
   },
   childCopy: {
     flex: 1,
+    gap: 6,
   },
   childName: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 16,
-    color: colors.text,
+    fontFamily: fonts.display,
+    fontSize: 20,
+    color: colors.chocolate,
   },
   childMeta: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 2,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 5,
   },
-  chevron: {
-    fontFamily: 'Nunito_900Black',
-    fontSize: 22,
-    color: colors.honeyDark,
+  go: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingLeft: 2,
   },
   formCard: {
-    width: '100%',
-    marginTop: 16,
-    backgroundColor: colors.white,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: colors.honey,
-    padding: 16,
+    gap: 8,
+    paddingTop: 22,
   },
-  formTitle: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 16,
-    color: colors.honeyDark,
-    marginBottom: 12,
-  },
-  label: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 13,
-    color: colors.honeyDark,
+  formHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     marginBottom: 6,
   },
+  formHeaderText: {
+    flex: 1,
+  },
+  formTitle: {
+    fontFamily: fonts.display,
+    fontSize: 20,
+    color: colors.berryDark,
+  },
+  formSub: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  label: {
+    fontFamily: fonts.extraBold,
+    fontSize: 12,
+    color: colors.berryDark,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginTop: 6,
+  },
+  avatarRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  avatarChoice: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    borderWidth: 2.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarChoiceActive: {
+    transform: [{ scale: 1.08 }],
+  },
+  avatarChoiceEmoji: {
+    fontSize: 28,
+  },
+  avatarCheck: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: {
+    transform: [{ translateY: 1 }],
+    opacity: 0.95,
+  },
   input: {
-    borderWidth: 1.5,
-    borderColor: colors.honeyLight,
-    borderRadius: 14,
+    borderWidth: 2.5,
+    borderColor: colors.berryLight,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.berry,
+    borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 15,
-    color: colors.text,
-    backgroundColor: colors.creamSoft,
+    fontFamily: fonts.extraBold,
+    fontSize: 17,
+    color: colors.chocolate,
+    backgroundColor: colors.white,
   },
   gradeRow: {
     flexDirection: 'row',
@@ -336,55 +418,43 @@ const styles = StyleSheet.create({
   gradeChip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: colors.honeyLight,
-    backgroundColor: colors.creamSoft,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: colors.leafLight,
+    backgroundColor: colors.white,
   },
   gradeChipActive: {
-    backgroundColor: colors.gold,
-    borderColor: colors.honeyDark,
+    backgroundColor: colors.leaf,
+    borderColor: colors.leafDark,
   },
   gradeChipText: {
-    fontFamily: 'Nunito_700Bold',
+    fontFamily: fonts.extraBold,
     fontSize: 12,
-    color: colors.textMuted,
+    color: colors.leafDark,
   },
   gradeChipTextActive: {
     color: colors.white,
   },
-  primaryBtn: {
-    marginTop: 16,
-    backgroundColor: colors.honey,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: colors.honeyDark,
-    paddingVertical: 14,
-    alignItems: 'center',
+  saveBtn: {
+    marginTop: 10,
   },
-  primaryText: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 16,
-    color: colors.white,
+  cancel: {
+    alignSelf: 'center',
+    padding: 6,
   },
-  secondaryBtn: {
-    marginTop: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
+  cancelText: {
+    fontFamily: fonts.bold,
+    fontSize: 13,
+    color: colors.textMuted,
   },
-  secondaryText: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 15,
-    color: colors.honeyDark,
-  },
-  btnDisabled: {
-    opacity: 0.6,
+  addBtn: {
+    marginTop: 6,
   },
   error: {
-    marginTop: 12,
-    fontFamily: 'Nunito_700Bold',
+    marginTop: 6,
+    fontFamily: fonts.bold,
     fontSize: 13,
-    color: colors.softRed,
+    color: colors.coralDark,
     textAlign: 'center',
   },
 });

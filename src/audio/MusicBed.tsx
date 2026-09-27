@@ -2,9 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import type { AudioPlayer, AudioSource } from 'expo-audio';
 import { createCompatAudioPlayer, resolveBundledSource } from './createPlayer';
+import { subscribeMusicDuck } from './ducking';
 import { configurePlaybackSession } from './session';
 
-const MUSIC_VOLUME = 0.95;
+const MUSIC_VOLUME = 0.42;
+const DUCKED_VOLUME = 0.12;
 
 type Props = {
   source: AudioSource;
@@ -41,7 +43,15 @@ export function MusicBed({ source, enabled, restartKey }: Props) {
       }
     };
     const sub = AppState.addEventListener('change', onChange);
-    return () => sub.remove();
+    const unsubDuck = subscribeMusicDuck((ducked) => {
+      const player = playerRef.current;
+      if (!player) return;
+      player.volume = ducked ? DUCKED_VOLUME : MUSIC_VOLUME;
+    });
+    return () => {
+      sub.remove();
+      unsubDuck();
+    };
   }, [enabled]);
 
   useEffect(() => {

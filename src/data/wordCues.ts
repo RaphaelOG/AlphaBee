@@ -45,6 +45,7 @@ export const WORD_CUES: Record<string, WordCue> = {
   that: { picture: '👉', meaning: 'The one over there' },
   with: { picture: '🤝', meaning: 'Together' },
   which: { picture: '❔', meaning: 'Asking to choose' },
+  witch: { picture: '🧙', meaning: 'A storybook magic person with a broom' },
   hear: { picture: '👂', meaning: 'Listen with your ears' },
   here: { picture: '📌', meaning: 'In this place' },
   peace: { picture: '☮️', meaning: 'Calm and quiet' },

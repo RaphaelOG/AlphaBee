@@ -1,5 +1,6 @@
 /**
- * Generate original AlphaBee SFX + looping music as WAV, then AAC M4A for iOS.
+ * Generate original AlphaBee SFX as WAV, then AAC M4A for iOS.
+ * Licensed background music lives in assets/audio/music/ and is not overwritten.
  * Run: node scripts/generate-audio.js
  */
 const { execFileSync } = require('child_process');
@@ -388,7 +389,6 @@ function makeBeeDance() {
 
 const root = path.join(__dirname, '..');
 const sfxDir = path.join(root, 'assets/audio/sfx');
-const musicDir = path.join(root, 'assets/audio/music');
 
 const sfx = {
   ding: makeDing(),
@@ -397,14 +397,6 @@ const sfx = {
   tap: makeTap(),
   whoosh: makeWhoosh(),
   complete: makeComplete(),
-};
-
-const music = {
-  sunny_hive: makeSunnyHive(),
-  honey_hum: makeHoneyHum(),
-  garden_buzz: makeGardenBuzz(),
-  golden_morning: makeGoldenMorning(),
-  bee_dance: makeBeeDance(),
 };
 
 function writeM4a(wavPath) {
@@ -432,11 +424,4 @@ for (const [name, samples] of Object.entries(sfx)) {
   console.log('sfx', name, (samples.length / SAMPLE_RATE).toFixed(2) + 's');
 }
 
-for (const [name, samples] of Object.entries(music)) {
-  const file = path.join(musicDir, `${name}.wav`);
-  writeWav(file, normalize(samples));
-  writeM4a(file);
-  console.log('music', name, (samples.length / SAMPLE_RATE).toFixed(2) + 's');
-}
-
-console.log('Done generating AlphaBee audio assets.');
+console.log('Done generating AlphaBee SFX. Licensed music in assets/audio/music is left unchanged.');

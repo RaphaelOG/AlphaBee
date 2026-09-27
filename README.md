@@ -13,7 +13,7 @@ Children practice spelling through a two-round flow: first **look** at the word,
 - **Grade Level Quest** — sequenced K–5 phonics path (CVC, digraphs, blends, silent e, vowel teams, and more) plus sight-word units
 - **Practice Hive** — parents/teachers enter custom weekly spelling lists
 - **Look → Listen rounds** — Round 1 shows a picture + kid-friendly meaning with the word; Round 2 hides them and uses text-to-speech (`expo-speech`)
-- **Sound design** — ding / buzz / hive SFX, celebration fanfare, and a hive music collection (Sunny Hive, Honey Hum, Garden Buzz, Golden Morning, Bee Dance)
+- **Sound design** — ding / buzz / hive SFX, celebration fanfare, and a quiet hive music collection (Sunny Hive, Honey Hum, Garden Buzz, Golden Morning, Bee Dance)
 - **Hive Settings** — toggle sound effects, music, and word voice independently; pick a music track
 - **Session quests** — Quick Buzz (5), Honey Hunt (10), or Hive Hero (15) words, then a clear finish screen
 - **Daily streak** — complete one quest per day to keep your streak going (saved on device)
@@ -78,7 +78,7 @@ AlphaBee/
 ├── App.tsx                 # Root: fonts + navigation + AudioProvider
 ├── app.json                # Expo config
 ├── scripts/
-│   └── generate-audio.js   # Regenerates original SFX + music WAVs
+│   └── generate-audio.js   # Regenerates original SFX (not licensed music)
 ├── src/
 │   ├── audio/              # Sound manager, music catalog, settings
 │   ├── components/         # Reusable UI (Hexagon, AlphaBee, keyboard, etc.)
@@ -124,5 +124,11 @@ npm run web        # start web
 - **Palette:** honey gold (`#F1C40F`, `#FFD700`), cream (`#FFFDD0`), dark brown text
 - **Theme:** modern cartoon / friendly honeycomb motifs throughout layout and controls
 - Components are modular so cards, modals, and hex controls can be reused across screens
+
+## Music credits
+
+Hive background music is by Kevin MacLeod (incompetech.com), licensed under
+[CC BY 3.0](http://creativecommons.org/licenses/by/3.0/). Full track list:
+[assets/audio/CREDITS.md](./assets/audio/CREDITS.md).
 
 

@@ -114,7 +114,7 @@ export function GameScreen({ navigation, route }: Props) {
     isSpeakingRef.current = true;
     setIsSpeaking(true);
     try {
-      await speakWord(target);
+      await speakWord(target, { meaning: getWordCue(target).meaning });
     } finally {
       isSpeakingRef.current = false;
       setIsSpeaking(false);

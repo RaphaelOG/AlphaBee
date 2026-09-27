@@ -29,31 +29,31 @@ export const MUSIC_TRACKS: MusicTrack[] = [
   {
     id: 'sunny_hive',
     title: 'Sunny Hive',
-    blurb: 'Bright and gentle — perfect for spelling practice',
+    blurb: 'Light flute and bells — a sunny garden for spelling practice',
     source: require('../../assets/audio/music/sunny_hive.m4a'),
   },
   {
     id: 'honey_hum',
     title: 'Honey Hum',
-    blurb: 'Soft pads with a warm honey glow',
+    blurb: 'Laid-back guitar that stays under the word voice',
     source: require('../../assets/audio/music/honey_hum.m4a'),
   },
   {
     id: 'garden_buzz',
     title: 'Garden Buzz',
-    blurb: 'Light and playful for younger learners',
+    blurb: 'Sparkly meadow music — soft as pollen in the air',
     source: require('../../assets/audio/music/garden_buzz.m4a'),
   },
   {
     id: 'golden_morning',
     title: 'Golden Morning',
-    blurb: 'Calm morning melody for focused quests',
+    blurb: 'A quiet village sunrise for focused quests',
     source: require('../../assets/audio/music/golden_morning.m4a'),
   },
   {
     id: 'bee_dance',
     title: 'Bee Dance',
-    blurb: 'A buzzy little dance around the hive',
+    blurb: 'A gentle honey-bee shuffle — cheerful, not loud',
     source: require('../../assets/audio/music/bee_dance.m4a'),
   },
 ];

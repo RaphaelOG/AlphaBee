@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useId, useMemo } from 'react';
 import { StyleSheet, Text, View, ViewStyle, StyleProp } from 'react-native';
 import Svg, { Polygon, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 type HexagonProps = {
   size?: number;
@@ -88,11 +88,12 @@ export function Hexagon({
     [rounded, width, height, radius],
   );
 
-  const gradientId = `hex-${size}-${fill.replace('#', '')}-${rounded ? 'r' : 's'}`;
+  const reactId = useId().replace(/:/g, '');
+  const gradientId = `hex-${reactId}`;
 
   return (
     <View style={[{ width, height }, styles.wrap, style]}>
-      <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+      <Svg width={width} height={height} style={styles.svg} pointerEvents="none">
         {fillEnd ? (
           <Defs>
             <LinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -143,13 +144,30 @@ export function HexLetter({
 
   const letterColor =
     state === 'incorrect' ? colors.coralDark : state === 'correct' ? colors.leafDark : colors.chocolate;
+  const fontSize = Math.round(size * 0.44);
+  const glyph = letter?.trim() ? letter.trim().toUpperCase() : '';
 
   return (
-    <Hexagon size={size} rounded cornerRadius={size * 0.1} strokeWidth={2.5} {...palette}>
-      <Text style={[styles.letter, { fontSize: size * 0.4, color: letterColor }]}>
-        {letter?.toUpperCase() ?? ''}
-      </Text>
-    </Hexagon>
+    <View style={{ width: size, height: size * 0.866 }}>
+      <Hexagon
+        size={size}
+        rounded
+        cornerRadius={size * 0.1}
+        strokeWidth={2.5}
+        style={StyleSheet.absoluteFill}
+        {...palette}
+      />
+      {glyph ? (
+        <View style={styles.letterLayer} pointerEvents="none">
+          <Text
+            allowFontScaling={false}
+            style={[styles.letter, { fontSize, lineHeight: fontSize + 3, color: letterColor }]}
+          >
+            {glyph}
+          </Text>
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -157,18 +175,29 @@ const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'visible',
+  },
+  svg: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 0,
   },
   content: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 2,
+    elevation: 4,
+  },
+  letterLayer: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 3,
+    elevation: 5,
   },
   letter: {
-    fontFamily: 'Baloo2_800ExtraBold',
+    fontFamily: fonts.display,
     textAlign: 'center',
+    includeFontPadding: false,
   },
 });

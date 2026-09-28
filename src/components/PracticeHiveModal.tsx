@@ -1,7 +1,20 @@
-import React, { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts } from '../theme';
+import { validateCustomWord } from '../utils/wordValidation';
 import { AlphaBee } from './AlphaBee';
 import { ChunkyButton, KidCard, Pill, SpeechBubble, Sticker } from './KidUI';
 
@@ -12,17 +25,42 @@ type PracticeHiveModalProps = {
 };
 
 export function PracticeHiveModal({ visible, onClose, onSave }: PracticeHiveModalProps) {
+  const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
+  const inputRef = useRef<TextInput>(null);
   const [draft, setDraft] = useState('');
   const [words, setWords] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const show = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo({ y: 120, animated: true });
+      });
+    });
+    const hide = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, [visible]);
 
   const addWord = () => {
-    const cleaned = draft.trim().toLowerCase().replace(/[^a-z]/g, '');
-    if (!cleaned || words.includes(cleaned)) {
-      setDraft('');
+    const result = validateCustomWord(draft, words);
+    if (!result.ok) {
+      setError(result.message);
       return;
     }
-    setWords((prev) => [...prev, cleaned]);
+    setWords((prev) => [...prev, result.word]);
     setDraft('');
+    setError(null);
+    inputRef.current?.focus();
   };
 
   const removeWord = (word: string) => {
@@ -30,90 +68,138 @@ export function PracticeHiveModal({ visible, onClose, onSave }: PracticeHiveModa
   };
 
   const handleSave = () => {
-    if (words.length === 0) return;
+    if (words.length === 0) {
+      setError('Add at least one valid word to start.');
+      return;
+    }
+    Keyboard.dismiss();
     onSave(words);
     setDraft('');
     setWords([]);
+    setError(null);
   };
 
   const handleClose = () => {
+    Keyboard.dismiss();
     onClose();
   };
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
-      <View style={styles.backdrop}>
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <Sticker emoji="📝" tone="leaf" size={48} rotate={-10} style={styles.sticker} />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
+        <View
+          style={[
+            styles.backdrop,
+            { paddingBottom: Platform.OS === 'android' ? keyboardHeight : 0 },
+          ]}
+        >
+          <Pressable style={StyleSheet.absoluteFill} onPress={Keyboard.dismiss} accessibilityLabel="Dismiss keyboard" />
+          <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) + 12, zIndex: 1 }]}>
+            <View style={styles.handle} />
+            <Sticker emoji="📝" tone="leaf" size={48} rotate={-10} style={styles.sticker} />
 
-          <View style={styles.hero}>
-            <AlphaBee size={72} mood="thinking" />
-            <SpeechBubble text="Parents: drop in this week’s spelling words!" tail="left" style={styles.bubble} />
-          </View>
+            <ScrollView
+              ref={scrollRef}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.sheetContent}
+            >
+              <View style={styles.hero}>
+                <AlphaBee size={72} mood="thinking" />
+                <SpeechBubble text="Parents: drop in this week’s spelling words!" tail="left" style={styles.bubble} />
+              </View>
 
-          <Text style={styles.title}>Practice Hive</Text>
-          <Text style={styles.sub}>Add custom words, then tap Start to play</Text>
+              <Text style={styles.title}>Practice Hive</Text>
+              <Text style={styles.sub}>Add a real spelling word, then tap Start to play</Text>
 
-          <View style={styles.inputRow}>
-            <TextInput
-              value={draft}
-              onChangeText={setDraft}
-              placeholder="Type a word"
-              placeholderTextColor={colors.textMuted}
-              autoCapitalize="none"
-              autoCorrect={false}
-              style={styles.input}
-              onSubmitEditing={addWord}
-              returnKeyType="done"
-            />
-            <ChunkyButton
-              label="Add"
-              tone="leaf"
-              size="sm"
-              onPress={addWord}
-              icon={<Ionicons name="add" size={16} color={colors.white} />}
-            />
-          </View>
-
-          <KidCard tone="honey" tinted contentStyle={styles.listCard}>
-            <View style={styles.listHead}>
-              <Pill emoji="🐝" label={`${words.length} word${words.length === 1 ? '' : 's'}`} tone="honey" />
-            </View>
-            <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-              {words.map((word, i) => (
-                <View key={word} style={[styles.chip, i % 2 === 1 && styles.chipAlt]}>
-                  <Text style={styles.chipText}>{word}</Text>
-                  <Pressable onPress={() => removeWord(word)} hitSlop={8} accessibilityLabel={`Remove ${word}`}>
-                    <Ionicons name="close-circle" size={18} color={colors.coralDark} />
-                  </Pressable>
+              <View style={styles.inputRow}>
+                <TextInput
+                  ref={inputRef}
+                  value={draft}
+                  onChangeText={(value) => {
+                    setDraft(value);
+                    if (error) setError(null);
+                  }}
+                  placeholder="Type a word"
+                  placeholderTextColor={colors.textMuted}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="off"
+                  spellCheck
+                  style={[styles.input, error ? styles.inputError : null]}
+                  onSubmitEditing={addWord}
+                  onFocus={() => {
+                    setTimeout(() => {
+                      scrollRef.current?.scrollTo({ y: 140, animated: true });
+                    }, 80);
+                  }}
+                  returnKeyType="done"
+                  blurOnSubmit={false}
+                  accessibilityLabel="Type a spelling word"
+                />
+                <ChunkyButton
+                  label="Add"
+                  tone="leaf"
+                  size="sm"
+                  onPress={addWord}
+                  icon={<Ionicons name="add" size={16} color={colors.white} />}
+                />
+              </View>
+              {error ? (
+                <View style={styles.errorRow}>
+                  <Ionicons name="alert-circle" size={16} color={colors.coralDark} />
+                  <Text style={styles.errorText}>{error}</Text>
                 </View>
-              ))}
-              {words.length === 0 ? (
-                <Text style={styles.empty}>Your custom hive is empty — add a few words to begin.</Text>
-              ) : null}
-            </ScrollView>
-          </KidCard>
+              ) : (
+                <Text style={styles.hint}>Letters only, 2–16 letters, with a vowel — like hive or because.</Text>
+              )}
 
-          <View style={styles.actions}>
-            <Pressable onPress={handleClose} style={styles.cancel}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </Pressable>
-            <ChunkyButton
-              label="Start!"
-              tone="honey"
-              onPress={handleSave}
-              disabled={words.length === 0}
-              icon={<Ionicons name="play" size={18} color={colors.white} />}
-            />
+              <KidCard tone="honey" tinted contentStyle={styles.listCard}>
+                <View style={styles.listHead}>
+                  <Pill emoji="🐝" label={`${words.length} word${words.length === 1 ? '' : 's'}`} tone="honey" />
+                </View>
+                <View style={styles.listContent}>
+                  {words.map((word, i) => (
+                    <View key={word} style={[styles.chip, i % 2 === 1 && styles.chipAlt]}>
+                      <Text style={styles.chipText}>{word}</Text>
+                      <Pressable onPress={() => removeWord(word)} hitSlop={8} accessibilityLabel={`Remove ${word}`}>
+                        <Ionicons name="close-circle" size={18} color={colors.coralDark} />
+                      </Pressable>
+                    </View>
+                  ))}
+                  {words.length === 0 ? (
+                    <Text style={styles.empty}>Your custom hive is empty — add a few words to begin.</Text>
+                  ) : null}
+                </View>
+              </KidCard>
+
+              <View style={styles.actions}>
+                <Pressable onPress={handleClose} style={styles.cancel}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </Pressable>
+                <ChunkyButton
+                  label="Start!"
+                  tone="honey"
+                  onPress={handleSave}
+                  disabled={words.length === 0}
+                  icon={<Ionicons name="play" size={18} color={colors.white} />}
+                />
+              </View>
+            </ScrollView>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(62, 42, 26, 0.5)',
@@ -125,11 +211,13 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
     paddingHorizontal: 20,
     paddingTop: 14,
-    paddingBottom: 36,
-    maxHeight: '86%',
+    maxHeight: '88%',
     borderWidth: 3,
     borderColor: colors.honey,
     borderBottomWidth: 0,
+  },
+  sheetContent: {
+    paddingBottom: 12,
   },
   handle: {
     alignSelf: 'center',
@@ -143,6 +231,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 18,
     right: 18,
+    zIndex: 2,
   },
   hero: {
     flexDirection: 'row',
@@ -169,7 +258,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 14,
+    marginBottom: 6,
   },
   input: {
     flex: 1,
@@ -185,15 +274,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.chocolate,
   },
+  inputError: {
+    borderColor: colors.coral,
+    borderBottomColor: colors.coralDark,
+  },
+  hint: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    color: colors.textMuted,
+    marginBottom: 12,
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 12,
+  },
+  errorText: {
+    flex: 1,
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: colors.coralDark,
+  },
   listCard: {
     minHeight: 120,
-    maxHeight: 240,
   },
   listHead: {
     marginBottom: 8,
-  },
-  list: {
-    maxHeight: 180,
   },
   listContent: {
     flexDirection: 'row',

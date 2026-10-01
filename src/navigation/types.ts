@@ -5,7 +5,7 @@ export type GameMode = 'quest' | 'practice';
 
 export type RootStackParamList = {
   Landing: undefined;
-  Auth: undefined;
+  Auth: { tab?: 'login' | 'register' } | undefined;
   ChildSelect: undefined;
   ModeSelect: undefined;
   Settings: undefined;

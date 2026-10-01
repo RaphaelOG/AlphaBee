@@ -14,7 +14,7 @@ import { FlowerMeadow, HoneycombPattern, Pollen, SkyScene, Sparkles } from '../c
 import { useAuth } from '../auth';
 import { getAvatar } from '../data/avatars';
 import { gradeLabel, type GradeLevel } from '../data/curriculum';
-import { colors, fonts, typography } from '../theme';
+import { colors, fonts, toyShadow, typography } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Landing'>;
@@ -82,9 +82,13 @@ export function LandingScreen({ navigation }: Props) {
             <Pressable
               onPress={() => navigation.navigate('ChildSelect')}
               hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Switch learner"
               style={({ pressed }) => [styles.accountChip, pressed && styles.pressed]}
             >
-              <Text style={styles.accountEmoji}>{activeChild ? avatar.emoji : '👋'}</Text>
+              <View style={styles.accountBadge}>
+                <Text style={styles.accountEmoji}>{activeChild ? avatar.emoji : '👋'}</Text>
+              </View>
               <Text style={styles.accountText} numberOfLines={1}>
                 {activeChild
                   ? `${activeChild.nickname} · ${gradeLabel(activeChild.gradeLevel as GradeLevel)}`
@@ -94,12 +98,23 @@ export function LandingScreen({ navigation }: Props) {
             </Pressable>
           ) : (
             <Pressable
-              onPress={() => navigation.navigate('Auth')}
-              hitSlop={10}
-              style={({ pressed }) => [styles.accountChip, pressed && styles.pressed]}
+              onPress={() => navigation.navigate('Auth', { tab: 'register' })}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Sign up"
+              style={({ pressed }) => [styles.signUpBtn, pressed && styles.pressed]}
             >
-              <Ionicons name="person-circle" size={18} color={colors.honeyDark} />
-              <Text style={styles.accountText}>Sign in</Text>
+              <View style={styles.signUpShine} />
+              <LinearGradient
+                colors={[colors.goldBright, colors.gold]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.signUpBadge}
+              >
+                <Ionicons name="person-add" size={13} color={colors.white} />
+              </LinearGradient>
+              <Text style={styles.signUpText}>Sign up</Text>
+              <Ionicons name="chevron-forward" size={13} color={colors.honey} />
             </Pressable>
           )}
           <Pressable
@@ -196,26 +211,84 @@ const styles = StyleSheet.create({
   accountChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 7,
     maxWidth: 230,
-    backgroundColor: colors.white,
+    backgroundColor: colors.creamSoft,
     borderWidth: 2.5,
     borderColor: colors.honeyLight,
     borderBottomWidth: 4,
     borderBottomColor: colors.honey,
     borderRadius: 999,
-    paddingLeft: 8,
+    paddingLeft: 5,
     paddingRight: 12,
-    paddingVertical: 6,
+    paddingVertical: 5,
+    ...toyShadow,
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  accountBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.sunny,
+    borderWidth: 1.5,
+    borderColor: colors.honeyLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   accountEmoji: {
-    fontSize: 16,
+    fontSize: 14,
   },
   accountText: {
     fontFamily: fonts.extraBold,
     fontSize: 13,
     color: colors.honeyDark,
     flexShrink: 1,
+  },
+  signUpBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    overflow: 'hidden',
+    backgroundColor: colors.sunny,
+    borderWidth: 2.5,
+    borderColor: colors.gold,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.honey,
+    borderRadius: 999,
+    paddingLeft: 5,
+    paddingRight: 10,
+    paddingVertical: 5,
+    ...toyShadow,
+    shadowOpacity: 0.14,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  signUpShine: {
+    position: 'absolute',
+    top: 3,
+    left: 12,
+    right: 12,
+    height: 8,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.45)',
+  },
+  signUpBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.honeyDark,
+  },
+  signUpText: {
+    fontFamily: fonts.display,
+    fontSize: 14,
+    color: colors.honeyDeep,
+    letterSpacing: 0.2,
+    marginTop: 1,
   },
   iconButton: {
     width: 40,

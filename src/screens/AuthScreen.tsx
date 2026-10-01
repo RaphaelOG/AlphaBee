@@ -27,9 +27,9 @@ import type { RootStackParamList } from '../navigation/types';
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 type AuthTab = 'login' | 'register';
 
-export function AuthScreen({ navigation }: Props) {
+export function AuthScreen({ navigation, route }: Props) {
   const { login, register } = useAuth();
-  const [tab, setTab] = useState<AuthTab>('login');
+  const [tab, setTab] = useState<AuthTab>(route.params?.tab === 'register' ? 'register' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');

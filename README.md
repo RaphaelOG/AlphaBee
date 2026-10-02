@@ -4,6 +4,18 @@ A playful, honeycomb-themed spelling game for kids — built with **React Native
 
 Children practice spelling through a two-round flow: first **look** at the word, then **listen** and spell it from memory. Parents and teachers can also add custom vocabulary lists.
 
+## Screenshots
+
+<p align="center">
+  <img src="assets/screenshots/landing.jpg" alt="AlphaBee landing page" width="30%" />
+  <img src="assets/screenshots/look-and-spell.png" alt="Look & Spell round" width="30%" />
+  <img src="assets/screenshots/listen-and-spell.png" alt="Listen & Spell round" width="30%" />
+</p>
+
+<p align="center">
+  <em>Landing &nbsp;·&nbsp; Look &amp; Spell &nbsp;·&nbsp; Listen &amp; Spell</em>
+</p>
+
 ## Features
 
 - **Landing experience** — warm cream/honey palette, animated bee circle, honeycomb CTA

@@ -24,7 +24,7 @@ Children practice spelling through a two-round flow: first **look** at the word,
 - **Hive totals from API** — My Hive and Mode Select load lifetime honey, stars, and streak for the active child
 - **Grade Level Quest** — sequenced K–5 phonics path (CVC, digraphs, blends, silent e, vowel teams, and more) plus sight-word units
 - **Practice Hive** — parents/teachers enter custom weekly spelling lists
-- **Look → Listen rounds** — Round 1 shows a picture + kid-friendly meaning with the word; Round 2 hides them and uses text-to-speech (`expo-speech`)
+- **Look → Listen rounds** — Round 1 shows a picture + kid-friendly meaning with the word; Round 2 hides them and uses text-to-speech (`expo-speech`)  - ***SOON TO BE OPTIMIZED***
 - **Sound design** — ding / buzz / hive SFX, celebration fanfare, and a quiet hive music collection (Sunny Hive, Honey Hum, Garden Buzz, Golden Morning, Bee Dance)
 - **Hive Settings** — toggle sound effects, music, and word voice independently; pick a music track
 - **Session quests** — Quick Buzz (5), Honey Hunt (10), or Hive Hero (15) words, then a clear finish screen
